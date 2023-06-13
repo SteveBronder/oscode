@@ -1,8 +1,8 @@
 #define PY_SSIZE_T_CLEAN
 #include "_python.hpp"
 #include "_pyoscode.hpp"
-#include "system.hpp"
-#include "solver.hpp"
+#include "oscode/system.hpp"
+#include "oscode/solver.hpp"
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
 #include <vector>
@@ -33,11 +33,11 @@ static std::complex<double> wfun(double t){
    
     std::complex<double> result = 0;
     PyObject *arglist = Py_BuildValue("(d)", t);
-    PyObject *py_result = PyEval_CallObject(w_callback, arglist);
+    PyObject *py_result = PyObject_CallObject(w_callback, arglist);
     Py_DECREF(arglist);
     // Check whether Python w(t) returned an exception
     if(py_result == NULL)
-        return NULL;
+        return std::complex<double>(NAN, NAN);
     // Check if return value was the correct type (complex)
     if(PyComplex_Check(py_result) || PyFloat_Check(py_result)){
         result = std::complex<double>(PyComplex_RealAsDouble(py_result), PyComplex_ImagAsDouble(py_result));
@@ -50,12 +50,11 @@ static std::complex<double> gfun(double t){
 
     std::complex<double> result = 0;
     PyObject *arglist = Py_BuildValue("(d)", t);
-    PyObject *py_result = PyEval_CallObject(g_callback, arglist);
+    PyObject *py_result = PyObject_CallObject(g_callback, arglist);
     Py_DECREF(arglist);
-    double real, imag;
     // Check whether Python w(t) returned an exception
     if(py_result == NULL)
-        return NULL;
+        return std::complex<double>(NAN, NAN);
     // Check if return value was the correct type (complex)
     if(PyComplex_Check(py_result) || PyFloat_Check(py_result))
         result = std::complex<double>(PyComplex_RealAsDouble(py_result), PyComplex_ImagAsDouble(py_result));
@@ -104,7 +103,7 @@ static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args, PyObject *kw
         t_eval = (double*)PyArray_DATA(t_evalarray_arr);  
         t_evalsize = (int)PyArray_SIZE(t_evalarray_arr);
     }
-    std::list<double> t_evallist;
+    std::vector<double> t_evallist;
     t_evallist.resize(t_evalsize);
     int i=0;
     for(auto it=t_evallist.begin(); it!=t_evallist.end(); it++){
@@ -134,11 +133,11 @@ static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args, PyObject *kw
         return (PyObject *) NULL;
     }
     de_system sys = de_system(&wfun, &gfun);
-    std::list<std::complex<double>> sol,dsol;
-    std::list<double> times;
-    std::list<bool> wkbs;
-    std::list<std::complex<double>> x_eval, dx_eval;
-    std::list<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
+    std::vector<std::complex<double>> sol,dsol;
+    std::vector<double> times;
+    std::vector<bool> wkbs;
+    std::vector<std::complex<double>> x_eval, dx_eval;
+    std::vector<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
 
     if(t_evalobj!=NULL){
         Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,rtol,atol,h0,full_output);
@@ -168,7 +167,7 @@ static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args, PyObject *kw
     int Neval = 0;
     auto itx_eval = x_eval.begin();
     auto itdx_eval = dx_eval.begin();
-    for(int Neval=0; Neval<Ndense; Neval++){
+    for(Neval=0; Neval<Ndense; Neval++){
         Py_complex x_eval_complex, dx_eval_complex;
         x_eval_complex.real = std::real(*itx_eval);
         x_eval_complex.imag = std::imag(*itx_eval);
@@ -269,7 +268,7 @@ static PyObject *_pyoscode_solve(PyObject *self, PyObject *args, PyObject *kwarg
         t_eval = (double*)PyArray_DATA(t_evalarray_arr);  
         t_evalsize = (int)PyArray_SIZE(t_evalarray_arr);
     }
-    std::list<double> t_evallist;
+    std::vector<double> t_evallist;
     t_evallist.resize(t_evalsize);
     int i=0;
     for(auto it=t_evallist.begin(); it!=t_evallist.end(); it++){
@@ -346,11 +345,11 @@ regions of the solution efficiently and numerical inaccuracies. Please \
 consider refining the sampling of the array(s) or switching to a more \
 suitable independent variable.",1);
     }
-    std::list<std::complex<double>> sol,dsol;
-    std::list<double> times;
-    std::list<bool> wkbs;
-    std::list<std::complex<double>> x_eval, dx_eval;
-    std::list<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
+    std::vector<std::complex<double>> sol,dsol;
+    std::vector<double> times;
+    std::vector<bool> wkbs;
+    std::vector<std::complex<double>> x_eval, dx_eval;
+    std::vector<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
 
     if(t_evalobj!=NULL){
         Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,rtol,atol,h0,full_output);
@@ -380,7 +379,7 @@ suitable independent variable.",1);
     int Neval = 0;
     auto itx_eval = x_eval.begin();
     auto itdx_eval = dx_eval.begin();
-    for(int Neval=0; Neval<Ndense; Neval++){
+    for(Neval=0; Neval<Ndense; Neval++){
         Py_complex x_eval_complex, dx_eval_complex;
         x_eval_complex.real = std::real(*itx_eval);
         x_eval_complex.imag = std::imag(*itx_eval);

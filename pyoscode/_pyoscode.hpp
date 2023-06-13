@@ -24,9 +24,6 @@ static char solve_docstring[] = "Runs the solver with w, g provided as arrays",
 static PyObject *_pyoscode_solve(PyObject *self, PyObject *args, PyObject *kwargs);
 /* Solve with w, g provided as functions */
 static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args, PyObject *kwargs);
-/* Callback functions */
-static std::complex<double> w(double t);
-static std::complex<double> g(double t);
 
 /* Module interface */
 static PyMethodDef module_methods[] = {

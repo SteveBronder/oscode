@@ -256,6 +256,21 @@ making and maintaining these open-source projects. A special thanks goes to the
 devs of `exhale <https://pypi.org/project/exhale/>`__ for making the beautiful C++ documentation possible. 
 
 
+Development
+-------------
+
+Run the following to setup an environment for development:
+
+    .. code:: bash
+        python -m venv env
+        source ./env/bin/activate
+        pip install numpy scipy pytest
+        python setup.py build_ext -i
+        pip install -e .
+        # Rerun tests after making changes
+        # inplace and force comple
+        python setup.py build_ext -if && pytest ./tests
+
 Changelog
 ---------
 
