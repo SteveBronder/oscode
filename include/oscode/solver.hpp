@@ -86,9 +86,9 @@ public:
    * @param[in] full_output file name to write results to
    *
    */
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
-           double t_i, double t_f, int o, double r_tol, double a_tol,
-           double h_0, const char *full_output) : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
+  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double>
+    dx0, double t_i, double t_f, int o=3, double r_tol=1e-4, double a_tol=0.0,
+    double h_0=1, const char* full_output="") : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
             atol(a_tol), h0(h_0),
             x(x0), dx(dx0), order(o), fo(full_output),
             wkbsolver(std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))), 
@@ -148,10 +148,10 @@ public:
    *
    */
   template <typename X = double>
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
-           double t_i, double t_f, const X &do_times, int o = 3,
-           double r_tol = 1e-4, double a_tol = 0.0, double h_0 = 1,
-           const char *full_output = "") : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
+  Solution(de_system &de_sys,
+    std::complex<double> x0, std::complex<double> dx0, double t_i, double t_f,
+    const X &do_times, int o=3, double r_tol=1e-4, double a_tol=0.0,
+    double h_0=1, const char* full_output="") : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
             atol(a_tol), h0(h_0),
             x(x0), dx(dx0), order(o), fo(full_output),
             wkbsolver(std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))), 

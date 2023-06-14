@@ -239,7 +239,8 @@ public:
     ddx_ = -std::pow(ws_(0), 2) * x_ - 2.0 * gs_(0) * dx_;
     // Set derivatives:
     h = h0;
-    d1w1();
+    d1w1_ = d1w1_w_.dot(ws_) / h;
+    d1w2_ = d1w2_w_.dot(ws_) / h;
     d1w2();
     d1w3();
     d1w4();
