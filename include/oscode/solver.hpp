@@ -296,15 +296,10 @@ public:
         double hnext;
         std::complex<double> xnext = wkb ? wkbx(0) : rkx(0);
         std::complex<double> dxnext = wkb ? wkbx(1) : rkx(1);
-        if (wkb) {
-          // if wkb step chosen, ignore truncation error in
-          // stepsize-increase
-          wkbdelta = std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff());
-          hnext = h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2);
-        } else {
-          // wkbdelta not set here?
-          hnext = hrk;
-        }
+        // if wkb step chosen, ignore truncation error in
+        // stepsize-increase
+        wkbdelta = wkb ? std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff()) : wkbdelta;
+        hnext = wkb ? h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2) : hrk;
         totsteps += 1;
         // Checking for too many steps and low acceptance ratio:
         if (totsteps > 5000) {

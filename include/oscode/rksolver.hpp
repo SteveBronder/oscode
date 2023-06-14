@@ -68,9 +68,9 @@ private:
    {18.67996349995727204273, -28.85057783973131956546,  10.72053408420926869789,  1.414741756508049078612, -0.9646615009432702537787}
   };
   Eigen::Matrix<double, 3, 3> butcher_a4{
-    {0.172673164646011428100, 0,                        0},
-   {-1.568317088384971429762, 2.395643923738960001662,  0},
-   {-8.769507466172720011410, 10.97821961869480000808, -1.208712152522079996671}
+    {0.172673164646011428100, -1.568317088384971429762, -8.769507466172720011410},
+   { 0,                        2.395643923738960001662,  10.97821961869480000808},
+   { 0,                        0,                        -1.208712152522079996671}
   };
   /* clang-format on */
   Eigen::Matrix<double, 6, 1> butcher_b5{
@@ -90,6 +90,27 @@ private:
   std::complex<double> wi, gi;
 
 public:
+  std::tuple<std::function<std::complex<double>(double)>, std::function<std::complex<double>(double)>> wi_gi_funcs;
+  auto setup_wi_gi_funcs(de_system* de_sys) {
+    std::tuple<std::function<std::complex<double>(double)>, std::function<std::complex<double>(double)>> funcs;
+
+  if (de_sys_->is_interpolated_) {
+    if (de_sys_->islogw_) {
+      std::get<0>(funcs) = [de_sys](double x) { return de_sys->Winterp_.expit(x); };
+    } else {
+      std::get<0>(funcs) = [de_sys](double x) { return de_sys->Winterp_(x); };
+    }
+    if (de_sys_->islogg_) {
+      std::get<1>(funcs) = [de_sys](double x) { return de_sys->Ginterp_.expit(x); };
+    } else {
+      std::get<1>(funcs) = [de_sys](double x) { return de_sys->Ginterp_(x);};
+    }
+  } else {
+    std::get<0>(funcs) = [ww = this->w_](double x) { return ww(x);};
+    std::get<1>(funcs) = [gg = this->g_](double x) { return gg(x);};
+  }
+  return funcs;
+  }
   /** Callable that gives the frequency term in the ODE at a given time */
   // std::function<std::complex<double>(double)> w;
 
@@ -105,7 +126,8 @@ public:
   RKSolver(de_system &de_sys)
       : de_sys_(&de_sys),
         w_(!de_sys_->is_interpolated_ ? de_sys_->w_ : nullptr),
-        g_(!de_sys_->is_interpolated_ ? de_sys_->g_ : nullptr) {}
+        g_(!de_sys_->is_interpolated_ ? de_sys_->g_ : nullptr),
+        wi_gi_funcs(setup_wi_gi_funcs(de_sys_)) {}
 
   // single step function
   Eigen::Matrix<std::complex<double>, 2, 2>
@@ -139,19 +161,8 @@ RKSolver::f(double t, const Mat &y) {
 
   //    std::cout << "Are we interpolating? " << de_sys_->is_interpolated_ <<
   //    std::endl;
-  if (de_sys_->is_interpolated_) {
-    if (de_sys_->islogw_)
-      wi = de_sys_->Winterp_.expit(t);
-    else
-      wi = de_sys_->Winterp_(t);
-    if (de_sys_->islogg_)
-      gi = de_sys_->Ginterp_.expit(t);
-    else
-      gi = de_sys_->Ginterp_(t);
-  } else {
-    wi = w_(t);
-    gi = g_(t);
-  }
+  wi = std::get<0>(this->wi_gi_funcs)(t);
+  gi = std::get<1>(this->wi_gi_funcs)(t);
   return Eigen::Matrix<std::complex<double>, 1, 2>{
       {y[1], -wi * wi * y[0] - 2.0 * gi * y[1]}};
 };
@@ -242,7 +253,7 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   for (int s = 1; s <= 3; s++) {
     y = y0;
     for (int i = 0; i <= (s - 1); i++) {
-      y += butcher_a4(s - 1, i) * k4.col(i);
+      y += butcher_a4(i, s - 1) * k4.col(i);
     }
     k4_i = h * f(t0 + butcher_c4(s) * h, y);
     k4.col(s) = k4_i;
@@ -263,26 +274,12 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   ws5(3) = ws5(2);
   gs5(4) = gs5(3);
   gs5(3) = gs5(2);
-  if (de_sys_->is_interpolated_) {
-    if (de_sys_->islogw_) {
-      ws5(2) = de_sys_->Winterp_.expit(t0 + h / 2);
-    } else {
-      ws5(2) = de_sys_->Winterp_(t0 + h / 2);
-    }
-    if (de_sys_->islogg_) {
-      gs5(2) = de_sys_->Ginterp_.expit(t0 + h / 2);
-    } else {
-      gs5(2) = de_sys_->Ginterp_(t0 + h / 2);
-    }
-  } else {
-    ws5(2) = w_(t0 + h / 2);
-    gs5(2) = g_(t0 + h / 2);
-  }
+  const auto next_step = t0 + h / 2;
+  ws5(2) = std::get<0>(this->wi_gi_funcs)(next_step);
+  gs5(2) = std::get<1>(this->wi_gi_funcs)(next_step);
 
   // Fill up k_dense matrix for dense output
-  for (int i = 0; i <= 5; i++) {
-    k_dense.col(i) = k5.col(i);
-  }
+  k_dense.block<2, 6>(0, 0) = k5.block<2, 6>(0, 0);
   k_dense.col(6) = h * f(t0 + h, result.col(0));
 
   // Experimental continuous output
