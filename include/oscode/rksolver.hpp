@@ -250,22 +250,18 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   k4.col(0) = k5.col(0);
   ws5(0) = ws(0);
   gs5(0) = gs(0);
-  for (int s = 1; s <= 3; s++) {
+  for (int s = 0; s < 4; s++) {
     y = y0;
-    for (int i = 0; i <= (s - 1); i++) {
-      y += butcher_a4(i, s - 1) * k4.col(i);
+    for (int i = 0; i < (s + 1); i++) {
+      y += butcher_a4(i, s) * k4.col(i);
     }
-    k4_i = h * f(t0 + butcher_c4(s) * h, y);
-    k4.col(s) = k4_i;
-    ws5(s) = wi;
-    gs5(s) = gi;
+    k4_i = h * f(t0 + butcher_c4(s + 1) * h, y);
+    k4.col(s + 1) = k4_i;
+    ws5(s + 1) = wi;
+    gs5(s + 1) = gi;
   }
-  for (int j = 0; j <= 5; j++) {
-    result.col(0) += butcher_b5(j) * k5.col(j);
-  }
-  for (int j = 0; j <= 3; j++) {
-    y4 += butcher_b4(j) * k4.col(j);
-  }
+  result.col(0) += k5 * butcher_b5;
+  y4 += k4 * butcher_b4;
   result.col(1) = result.col(0) - y4;
   result.col(0) += y0;
   //result << y5, delta;

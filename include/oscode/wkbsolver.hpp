@@ -72,8 +72,7 @@ protected:
   integrate(const Eigen::Matrix<std::complex<double>, 6, 1> &integrand6,
             const Eigen::Matrix<std::complex<double>, 5, 1> &integrand5) const {
     std::complex<double> x6 = h / 2.0 * glws6_.dot(integrand6);
-    std::complex<double> x5 = h / 2.0 * glws5_.dot(integrand5);
-    return {x6, x6 - x5};
+    return {x6, x6 - (h / 2.0 * glws5_.dot(integrand5))};
   }
 
   // Gauss-Lobatto n=6, 5 weights
@@ -265,7 +264,7 @@ public:
     // Calculate A, B
     fm_ = 1.0;
     fp_ = 1.0;
-    s_ = eigen_vec_c<4>{{0.0, 0.0, 0.0, 0.0}};
+    s_.setZero();
     dsi();
     dds();
     dfpi();
