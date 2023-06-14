@@ -181,8 +181,8 @@ To compile and run:
 .. code:: bash
     
     cd examples/
-    g++ -I../include/ -g -Wall -std=c++17 -c -o burst.o burst.cpp
-    g++ -I../include/ -g -Wall -std=c++17 -o burst burst.o
+    g++ -I../include/ -ggdb3 -Og -Wall -std=c++17 -c -o burst.o burst.cpp
+    g++ -I../include/ -ggdb3 -Og -Wall -std=c++17 -o burst burst.o
     ./burst
 
 
