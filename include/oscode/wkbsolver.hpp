@@ -83,10 +83,26 @@ protected:
   eigen_vec_d<5> glws5_{
       {1.0 / 10.0, 49.0 / 90.0, 32.0 / 45.0, 49.0 / 90.0, 1.0 / 10.0}};
   // weights for derivatives
+    Eigen::Matrix<double, 6, 6> d1_w_
+  {{-15.0000000048537,   20.2828318761850,     -8.07237453994912,      4.48936929577350,     -2.69982662677053,     0.999999999614819},
+   { -3.57272991033049,   0.298532922755350e-7, 5.04685352597795,     -2.30565629452303,      1.30709499910514,    -0.475562350082855},
+   {  0.969902096162109, -3.44251390568294,    -0.781532641131861e-10, 3.50592393061265,     -1.57271334190619,     0.539401220892526},
+  {  -0.539401220892533,  1.57271334190621,    -3.50592393061268,      0.782075077478921e-10, 3.44251390568290,    -0.969902096162095},
+   {  0.475562350082834, -1.30709499910509,     2.30565629452296,     -5.04685352597787,     -0.298533681980831e-7, 3.57272991033053},
+  {  -0.999999999614890,  2.69982662677075,    -4.48936929577383,      8.07237453994954,    -20.2828318761854,    15.0000000048538}};
+  Eigen::Matrix<double, 6, 6> d2_w_ {
+{140.000000016641, -263.163968874741, 196.996471291466, -120.708905753218, 74.8764032980854, -27.9999999782328},
+{60.8267436465252, -96.4575130414144, 42.0725563562029, -8.78105375967028, 3.41699471496020, -1.07772791660362},
+{-5.42778322782674, 28.6981500482483, -43.5424868874619, 24.5830052399403, -5.98965265951073, 1.67876748661075},
+{1.67876748661071, -5.98965265951067, 24.5830052399402, -43.5424868874617, 28.6981500482481, -5.42778322782664},
+{-1.07772791660381, 3.41699471496078, -8.78105375967105, 42.0725563562040, -96.4575130414154, 60.8267436465256},
+{-27.9999999782335, 74.8764032980873, -120.708905753221, 196.996471291469, -263.163968874744, 140.000000016642},
+  };
   eigen_vec_d<7> d4w1_w_{{3024.00000383582, -6923.06197480357, 7684.77676018742,
                           0.0, -6855.31809730784, 5085.60330881706,
                           -2016.00000072890}};
-  eigen_vec_d<6> d1w1_w_{{-15.0000000048537, 20.2828318761850,
+  eigen_vec_d<6> 
+      d1w1_w_{{-15.0000000048537, 20.2828318761850,
                           -8.07237453994912, 4.48936929577350,
                           -2.69982662677053, 0.999999999614819}},
       d1w2_w_{{-3.57272991033049, 0.298532922755350e-7, 5.04685352597795,
@@ -111,6 +127,7 @@ protected:
                42.0725563562040, -96.4575130414154, 60.8267436465256}},
       d2w6_w_{{-27.9999999782335, 74.8764032980873, -120.708905753221,
                196.996471291469, -263.163968874744, 140.000000016642}},
+      // Above is into matrices
       d3w1_w_{{-840.000000234078, 1798.12714381468, -1736.74461287884,
                1322.01528240287, -879.397812956524, 335.999999851893}},
       d3w2_w_{{-519.5390172614027, 1067.7171515309801, -934.3207515371753,
@@ -193,6 +210,19 @@ public:
   // constructor
   WKBSolver(){};
   WKBSolver(de_system &de_sys, int order) : order_(order){};
+
+    Eigen::Matrix<std::complex<double>, 3, 2>
+  step(bool dense_output, std::complex<double> x0, std::complex<double> dx0, double t0, double h0,
+       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
+       const Eigen::Matrix<std::complex<double>, 6, 1> &gs,
+       const Eigen::Matrix<std::complex<double>, 5, 1> &ws5,
+       const Eigen::Matrix<std::complex<double>, 5, 1> &gs5) {
+       if (dense_output) {
+        return step_internal<true>(x0, dx0, t0, h0, ws, gs, ws5, gs5);
+       } else {
+        return step_internal<false>(x0, dx0, t0, h0, ws, gs, ws5, gs5);
+       }
+  }
   /** Computes a WKB step of a given order and returns the solution and its
    * local error estimate.
    *
@@ -219,14 +249,18 @@ public:
    *   defined as the local error coming from those terms in the WKB series that
    *   involved numerical integrals
    */
+  template <bool dense_output>
   Eigen::Matrix<std::complex<double>, 3, 2>
-  step(std::complex<double> x0, std::complex<double> dx0, double t0, double h0,
+  step_internal(std::complex<double> x0, std::complex<double> dx0, double t0, double h0,
        const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
        const Eigen::Matrix<std::complex<double>, 6, 1> &gs,
        const Eigen::Matrix<std::complex<double>, 5, 1> &ws5,
        const Eigen::Matrix<std::complex<double>, 5, 1> &gs5) {
 
     // Set grid of ws, gs:
+    Eigen::Matrix<std::complex<double>, 6, 2> ws_gs;
+    ws_gs.col(0) = ws;
+    ws_gs.col(1) = gs;
     ws_ = ws;
     gs_ = gs;
     ws5_ = ws5;
@@ -239,8 +273,14 @@ public:
     ddx_ = -std::pow(ws_(0), 2) * x_ - 2.0 * gs_(0) * dx_;
     // Set derivatives:
     h = h0;
-    d1w1_ = d1w1_w_.dot(ws_) / h;
-    d1w2_ = d1w2_w_.dot(ws_) / h;
+    if constexpr (OSCODE_DEBUG) {
+      std::cout << "ws_: \n" << ws_ << std::endl; 
+    }
+    Eigen::Matrix<std::complex<double>, 6, 2> d1 = ((d1_w_ * ws_gs).array() / h).matrix(); 
+    Eigen::Matrix<std::complex<double>, 6, 2> d2 = ((d2_w_ * ws_gs).array() / (h * h)).matrix(); 
+
+    // d1w1_ = d1w1_w_.dot(ws_) / h;
+    /*
     d1w2();
     d1w3();
     d1w4();
@@ -248,18 +288,57 @@ public:
     d1w6();
     d2w1();
     d2w6();
+    */
     d3w1();
     d3w6();
     d4w1();
-    d1g1();
-    d1g6();
     d2g1();
     d2g6();
     d3g1();
     d1w2_5();
     d1w3_5();
     d1w4_5();
-    dws_ = eigen_vec_c<6>{{d1w1_, d1w2_, d1w3_, d1w4_, d1w5_, d1w6_}};
+    if constexpr (OSCODE_DEBUG) {
+    std::cout << "d1: \n" << d1(0) << ", " << d1w1_ << ": " << d1(0) - d1w1_ << std::endl;
+    std::cout << "d2: \n" << d1(1) << ", " << d1w2_ << ": " << d1(1) - d1w2_ << std::endl;
+    std::cout << "d3: \n" << d1(2) << ", " << d1w3_ << ": " << d1(2) - d1w3_ << std::endl;
+    std::cout << "d4: \n" << d1(3) << ", " << d1w4_ << ": " << d1(3) - d1w4_ << std::endl;
+    std::cout << "d5: \n" << d1(4) << ", " << d1w5_ << ": " << d1(4) - d1w5_ << std::endl;
+    std::cout << "d6: \n" << d1(5) << ", " << d1w6_ << ": " << d1(5) - d1w6_ << std::endl;
+    }
+    dws_ = d1.col(0);
+    d1w1_ = d1(0, 0);
+    d1w2_ = d1(1, 0);
+    d1w3_ = d1(2, 0);
+    d1w4_ = d1(3, 0);
+    d1w5_ = d1(4, 0);
+    d1w6_ = d1(5, 0);
+
+    dgs_ = d1.col(1);
+    d1g1_ = d1(0, 1);
+    d1g2_ = d1(1, 1);
+    d1g3_ = d1(2, 1);
+    d1g4_ = d1(3, 1);
+    d1g5_ = d1(4, 1);
+    d1g6_ = d1(5, 1);
+
+    d2ws_ = d2.col(0);
+    d2w1_ = d2(0, 0);
+    d2w2_ = d2(1, 0);
+    d2w3_ = d2(2, 0);
+    d2w4_ = d2(3, 0);
+    d2w5_ = d2(4, 0);
+    d2w6_ = d2(5, 0);
+
+    d2gs_ = d1.col(1);
+    d2g1_ = d1(0, 1);
+    d2g2_ = d1(1, 1);
+    d2g3_ = d1(2, 1);
+    d2g4_ = d1(3, 1);
+    d2g5_ = d1(4, 1);
+    d2g6_ = d1(5, 1);
+
+//    dws_ = eigen_vec_c<6>{{d1w1_, d1w2_, d1w3_, d1w4_, d1w5_, d1w6_}};
     dws5_ = eigen_vec_c<5>{{d1w1_, d1w2_5_, d1w3_5_, d1w4_5_, d1w6_}};
     // Higher order step
     // Calculate A, B
@@ -303,56 +382,57 @@ public:
 
     // Experimental continuous representation
     // Compute some derivatives only necessary for dense output
-    d1g2();
-    d1g3();
-    d1g4();
-    d1g5();
-    d2w2();
-    d2w3();
-    d2w4();
-    d2w5();
-    dgs_ = {d1g1_, d1g2_, d1g3_, d1g4_, d1g5_, d1g6_};
-    d2ws_ = {d2w1_, d2w2_, d2w3_, d2w4_, d2w5_, d2w6_};
+    if constexpr (dense_output) {
+      /*
+      d2w2();
+      d2w3();
+      d2w4();
+      d2w5();
+      */
+      //dgs_ = {d1g1_, d1g2_, d1g3_, d1g4_, d1g5_, d1g6_};
+      //dgs_ = d1.col(1);
+      //d2ws_ = {d2w1_, d2w2_, d2w3_, d2w4_, d2w5_, d2w6_};
 
-    eigen_vec_c<6> integrand6 =
-        4.0 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
-        4.0 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
-        dws_.cwiseProduct(dws_).cwiseQuotient(
-            ws_.cwiseProduct(ws_.cwiseProduct(ws_)));
-    eigen_vec_c<6> s1_interp;
-    for (int i = 0; i <= 5; i++) {
-      s1_interp(i) = -1. / 2 * std::log(ws_(i));
+      eigen_vec_c<6> integrand6 =
+          4.0 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
+          4.0 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
+          dws_.cwiseProduct(dws_).cwiseQuotient(
+              ws_.cwiseProduct(ws_.cwiseProduct(ws_)));
+      eigen_vec_c<6> s1_interp;
+      for (int i = 0; i <= 5; i++) {
+        s1_interp(i) = -1. / 2 * std::log(ws_(i));
+      }
+      auto ws_cwise = ws_.cwiseProduct(ws_).eval();
+      eigen_vec_c<6> s2_interp =
+          -1 / 4.0 *
+          (dws_.cwiseQuotient(ws_cwise) + 2.0 * gs_.cwiseQuotient(ws_));
+      eigen_vec_c<6> s3_interp =
+          1 / 4.0 * (gs_.cwiseProduct(gs_).cwiseQuotient((ws_cwise))) +
+          1 / 4.0 * (dgs_.cwiseQuotient(ws_cwise)) -
+          3 / 16.0 *
+              (dws_.cwiseProduct(dws_).cwiseQuotient(
+                  ws_cwise.cwiseProduct(ws_cwise))) +
+          1 / 8.0 * (d2ws_.cwiseQuotient(ws_cwise));
+
+      // S0
+      eigen_vec_c<6> s0_vdm_vec =
+          h / 2.0 * std::complex<double>(0, 1) * integ_vandermonde_ * ws_;
+      // S1
+      eigen_vec_c<6> s1_vdm_vec = -h / 2.0 * integ_vandermonde_ * gs_;
+      s1_vdm_vec.head(5) += (interp_vandermonde_ * s1_interp).tail(5);
+      // S2
+      eigen_vec_c<6> s2_vdm_vec =
+          -h / 2.0 * 1 / 8.0 * integ_vandermonde_ * integrand6;
+      s2_vdm_vec.head(5) += (interp_vandermonde_ * s2_interp).tail(5);
+      // S3
+      // Should the last value always be 0?
+      eigen_vec_c<6> s3_vdm_vec = eigen_vec_c<6>::Zero();
+      s3_vdm_vec.head(5) += (interp_vandermonde_ * s3_interp).tail(5);
+
+      x_vdm.tail(6) = s0_vdm_vec + s1_vdm_vec +
+                      std::complex<double>(0, 1) * s2_vdm_vec + s3_vdm_vec;
+      x_vdm(0) = ap_;
     }
-    auto ws_cwise = ws_.cwiseProduct(ws_).eval();
-    eigen_vec_c<6> s2_interp =
-        -1 / 4.0 *
-        (dws_.cwiseQuotient(ws_cwise) + 2.0 * gs_.cwiseQuotient(ws_));
-    eigen_vec_c<6> s3_interp =
-        1 / 4.0 * (gs_.cwiseProduct(gs_).cwiseQuotient((ws_cwise))) +
-        1 / 4.0 * (dgs_.cwiseQuotient(ws_cwise)) -
-        3 / 16.0 *
-            (dws_.cwiseProduct(dws_).cwiseQuotient(
-                ws_cwise.cwiseProduct(ws_cwise))) +
-        1 / 8.0 * (d2ws_.cwiseQuotient(ws_cwise));
-
-    // S0
-    eigen_vec_c<6> s0_vdm_vec =
-        h / 2.0 * std::complex<double>(0, 1) * integ_vandermonde_ * ws_;
-    // S1
-    eigen_vec_c<6> s1_vdm_vec = -h / 2.0 * integ_vandermonde_ * gs_;
-    s1_vdm_vec.head(5) += (interp_vandermonde_ * s1_interp).tail(5);
-    // S2
-    eigen_vec_c<6> s2_vdm_vec =
-        -h / 2.0 * 1 / 8.0 * integ_vandermonde_ * integrand6;
-    s2_vdm_vec.head(5) += (interp_vandermonde_ * s2_interp).tail(5);
-    // S3
-    // Should the last value always be 0?
-    eigen_vec_c<6> s3_vdm_vec = eigen_vec_c<6>::Zero();
-    s3_vdm_vec.head(5) += (interp_vandermonde_ * s3_interp).tail(5);
-
-    x_vdm.tail(6) = s0_vdm_vec + s1_vdm_vec +
-                    std::complex<double>(0, 1) * s2_vdm_vec + s3_vdm_vec;
-    x_vdm(0) = ap_;
 
     // Lower order step for correction
     // A, B

@@ -255,7 +255,7 @@ public:
         auto rkx = rkstep.col(0);
         auto rkerr = rkstep.col(1);
         // WKB step
-        Eigen::Matrix<std::complex<double>, 3, 2> wkbstep = wkbsolver->step(x, dx, t, h, rksolver.ws, rksolver.gs,
+        Eigen::Matrix<std::complex<double>, 3, 2> wkbstep = wkbsolver->step(dense_output, x, dx, t, h, rksolver.ws, rksolver.gs,
                                   rksolver.ws5, rksolver.gs5);
         auto wkbx = wkbstep.row(0);
         auto wkberr = wkbstep.row(2);
@@ -273,8 +273,7 @@ public:
         errmeasure_wkb(2) = std::abs(wkberr(0)) / (std::abs(wkbx(0)) * rtol + atol),
         errmeasure_wkb(3) = std::abs(wkberr(1)) / (std::abs(wkbx(1)) * rtol + atol);
         double rkdelta = std::max(1e-10, errmeasure_rk.maxCoeff(&maxindex_rk));
-        double wkbdelta;
-        if (std::isnan(errmeasure_wkb.maxCoeff()) ||
+        bool check_wkbdelta = std::isnan(errmeasure_wkb.maxCoeff()) ||
             std::isinf(std::real(wkbx(0))) ||
             std::isnan(std::real(wkbx(0))) ||
             std::isinf(std::imag(wkbx(0))) ||
@@ -282,24 +281,19 @@ public:
             std::isinf(std::real(wkbx(1))) ||
             std::isnan(std::real(wkbx(1))) ||
             std::isinf(std::imag(wkbx(1))) ||
-            std::isnan(std::imag(wkbx(1)))) {
-          wkbdelta = std::numeric_limits<double>::infinity();
-        } else {
-          wkbdelta = std::max(1e-10, errmeasure_wkb.maxCoeff(&maxindex_wkb));
-        }
-
+            std::isnan(std::imag(wkbx(1)));
+        double wkbdelta = check_wkbdelta ? std::numeric_limits<double>::infinity() : std::max(1e-10, errmeasure_wkb.maxCoeff(&maxindex_wkb));
         // predict next stepsize
         const double hrk = h * std::pow((1.0 / rkdelta), 1.0 / nrk);
         const double hwkb = h * std::pow(1.0 / wkbdelta, 1.0 / (maxindex_wkb <= 1 ? nwkb1 : nwkb2));
         // choose step with larger predicted stepsize
         const bool wkb = std::abs(hwkb) >= std::abs(hrk);
-        double hnext;
         std::complex<double> xnext = wkb ? wkbx(0) : rkx(0);
         std::complex<double> dxnext = wkb ? wkbx(1) : rkx(1);
         // if wkb step chosen, ignore truncation error in
         // stepsize-increase
         wkbdelta = wkb ? std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff()) : wkbdelta;
-        hnext = wkb ? h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2) : hrk;
+        double hnext = wkb ? h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2) : hrk;
         totsteps += 1;
         // Checking for too many steps and low acceptance ratio:
         if (totsteps > 5000) {
