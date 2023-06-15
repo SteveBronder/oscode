@@ -325,7 +325,7 @@ public:
                   // Dense output after successful WKB step
                   std::cout << "Attempting " << inner_dosols.size() << " dense output points after successful WKB step from " << t << " to " << t+h << std::endl;
                 }
-                wkbsolver->dense_step(t, inner_dotimes, inner_dosols,
+                wkbsolver->dense_step(t, h, inner_dotimes, inner_dosols,
                                       inner_dodsols);
               } else {
                 // Dense output after successful RK step
