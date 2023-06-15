@@ -11,12 +11,6 @@
 class WKBSolver {
 protected:
   // Derivative terms
-  void d1w1();
-  void d1w2();
-  void d1w3();
-  void d1w4();
-  void d1w5();
-  void d1w6();
   void d2w1();
   void d2w2();
   void d2w3();
@@ -30,12 +24,6 @@ protected:
   void d3w5();
   void d3w6();
   void d4w1();
-  void d1g1();
-  void d1g2();
-  void d1g3();
-  void d1g4();
-  void d1g5();
-  void d1g6();
   void d2g1();
   void d2g2();
   void d2g3();
@@ -83,91 +71,57 @@ protected:
   eigen_vec_d<5> glws5_{
       {1.0 / 10.0, 49.0 / 90.0, 32.0 / 45.0, 49.0 / 90.0, 1.0 / 10.0}};
   // weights for derivatives
+  /** clang-format off */
     Eigen::Matrix<double, 6, 6> d1_w_
   {{-15.0000000048537,   20.2828318761850,     -8.07237453994912,      4.48936929577350,     -2.69982662677053,     0.999999999614819},
-   { -3.57272991033049,   0.298532922755350e-7, 5.04685352597795,     -2.30565629452303,      1.30709499910514,    -0.475562350082855},
-   {  0.969902096162109, -3.44251390568294,    -0.781532641131861e-10, 3.50592393061265,     -1.57271334190619,     0.539401220892526},
-  {  -0.539401220892533,  1.57271334190621,    -3.50592393061268,      0.782075077478921e-10, 3.44251390568290,    -0.969902096162095},
-   {  0.475562350082834, -1.30709499910509,     2.30565629452296,     -5.04685352597787,     -0.298533681980831e-7, 3.57272991033053},
-  {  -0.999999999614890,  2.69982662677075,    -4.48936929577383,      8.07237453994954,    -20.2828318761854,    15.0000000048538}};
-  Eigen::Matrix<double, 6, 6> d2_w_ {
-{140.000000016641, -263.163968874741, 196.996471291466, -120.708905753218, 74.8764032980854, -27.9999999782328},
-{60.8267436465252, -96.4575130414144, 42.0725563562029, -8.78105375967028, 3.41699471496020, -1.07772791660362},
-{-5.42778322782674, 28.6981500482483, -43.5424868874619, 24.5830052399403, -5.98965265951073, 1.67876748661075},
-{1.67876748661071, -5.98965265951067, 24.5830052399402, -43.5424868874617, 28.6981500482481, -5.42778322782664},
-{-1.07772791660381, 3.41699471496078, -8.78105375967105, 42.0725563562040, -96.4575130414154, 60.8267436465256},
-{-27.9999999782335, 74.8764032980873, -120.708905753221, 196.996471291469, -263.163968874744, 140.000000016642},
+    { -3.57272991033049,   0.298532922755350e-7, 5.04685352597795,     -2.30565629452303,      1.30709499910514,    -0.475562350082855},
+    {  0.969902096162109, -3.44251390568294,    -0.781532641131861e-10, 3.50592393061265,     -1.57271334190619,     0.539401220892526},
+    { -0.539401220892533,  1.57271334190621,    -3.50592393061268,      0.782075077478921e-10, 3.44251390568290,    -0.969902096162095},
+    {  0.475562350082834, -1.30709499910509,     2.30565629452296,     -5.04685352597787,     -0.298533681980831e-7, 3.57272991033053},
+    { -0.999999999614890,  2.69982662677075,    -4.48936929577383,      8.07237453994954,    -20.2828318761854,     15.0000000048538}
   };
+  Eigen::Matrix<double, 6, 6> d2_w_ {
+    {140.000000016641, -263.163968874741,   196.996471291466, -120.708905753218,   74.8764032980854, -27.9999999782328},
+    { 60.8267436465252, -96.4575130414144,   42.0725563562029,  -8.78105375967028,  3.41699471496020, -1.07772791660362},
+    { -5.42778322782674, 28.6981500482483,  -43.5424868874619,  24.5830052399403,  -5.98965265951073,  1.67876748661075},
+    {  1.67876748661071, -5.98965265951067,  24.5830052399402, -43.5424868874617,  28.6981500482481,  -5.42778322782664},
+    { -1.07772791660381,  3.41699471496078,  -8.78105375967105, 42.0725563562040, -96.4575130414154,  60.8267436465256},
+    {-27.9999999782335,  74.8764032980873, -120.708905753221,  196.996471291469, -263.163968874744,  140.000000016642},
+  };
+  Eigen::Matrix<double, 6, 6> d3_w_ {
+    {-840.000000234078, 1798.12714381468, -1736.74461287884, 1322.01528240287, -879.397812956524, 335.999999851893},
+    {-519.5390172614027, 1067.7171515309801, -934.3207515371753, 617.0298708048756, -364.83838902593686, 133.95113548865842},
+    {-81.13326349151461, 90.82824880172825, 81.1176254157912, -199.41150112141258, 171.22231114098616, -62.62342074557803},
+    {62.62342074557783, -171.2223111409866, 199.41150112141344, -81.11762541579242, -90.82824880172696, 81.13326349151436},
+    {-133.95113548865962, 364.8383890259409, -617.0298708048813, 934.3207515371842, -1067.717151530989, 519.5390172614059},
+    {-335.999999851897, 879.397812956534, -1322.01528240289, 1736.74461287886, -1798.12714381470, 840.000000234086},
+  };
+  /** clang-format on */
   eigen_vec_d<7> d4w1_w_{{3024.00000383582, -6923.06197480357, 7684.77676018742,
                           0.0, -6855.31809730784, 5085.60330881706,
                           -2016.00000072890}};
-  eigen_vec_d<6> 
-      d1w1_w_{{-15.0000000048537, 20.2828318761850,
-                          -8.07237453994912, 4.48936929577350,
-                          -2.69982662677053, 0.999999999614819}},
-      d1w2_w_{{-3.57272991033049, 0.298532922755350e-7, 5.04685352597795,
-               -2.30565629452303, 1.30709499910514, -0.475562350082855}},
-      d1w3_w_{{0.969902096162109, -3.44251390568294, -0.781532641131861e-10,
-               3.50592393061265, -1.57271334190619, 0.539401220892526}},
-      d1w4_w_{{-0.539401220892533, 1.57271334190621, -3.50592393061268,
-               0.782075077478921e-10, 3.44251390568290, -0.969902096162095}},
-      d1w5_w_{{0.475562350082834, -1.30709499910509, 2.30565629452296,
-               -5.04685352597787, -0.298533681980831e-7, 3.57272991033053}},
-      d1w6_w_{{-0.999999999614890, 2.69982662677075, -4.48936929577383,
-               8.07237453994954, -20.2828318761854, 15.0000000048538}},
-      d2w1_w_{{140.000000016641, -263.163968874741, 196.996471291466,
-               -120.708905753218, 74.8764032980854, -27.9999999782328}},
-      d2w2_w_{{60.8267436465252, -96.4575130414144, 42.0725563562029,
-               -8.78105375967028, 3.41699471496020, -1.07772791660362}},
-      d2w3_w_{{-5.42778322782674, 28.6981500482483, -43.5424868874619,
-               24.5830052399403, -5.98965265951073, 1.67876748661075}},
-      d2w4_w_{{1.67876748661071, -5.98965265951067, 24.5830052399402,
-               -43.5424868874617, 28.6981500482481, -5.42778322782664}},
-      d2w5_w_{{-1.07772791660381, 3.41699471496078, -8.78105375967105,
-               42.0725563562040, -96.4575130414154, 60.8267436465256}},
-      d2w6_w_{{-27.9999999782335, 74.8764032980873, -120.708905753221,
-               196.996471291469, -263.163968874744, 140.000000016642}},
       // Above is into matrices
-      d3w1_w_{{-840.000000234078, 1798.12714381468, -1736.74461287884,
-               1322.01528240287, -879.397812956524, 335.999999851893}},
-      d3w2_w_{{-519.5390172614027, 1067.7171515309801, -934.3207515371753,
-               617.0298708048756, -364.83838902593686, 133.95113548865842}},
-      d3w3_w_{{-81.13326349151461, 90.82824880172825, 81.1176254157912,
-               -199.41150112141258, 171.22231114098616, -62.62342074557803}},
-      d3w4_w_{{62.62342074557783, -171.2223111409866, 199.41150112141344,
-               -81.11762541579242, -90.82824880172696, 81.13326349151436}},
-      d3w5_w_{{-133.95113548865962, 364.8383890259409, -617.0298708048813,
-               934.3207515371842, -1067.717151530989, 519.5390172614059}},
-      d3w6_w_{{-335.999999851897, 879.397812956534, -1322.01528240289,
-               1736.74461287886, -1798.12714381470, 840.000000234086}},
-      d1g1_w_{{-15.0000000048537, 20.2828318761850, -8.07237453994912,
-               4.48936929577350, -2.69982662677053, 0.999999999614819}},
-      d1g6_w_{{-0.999999999614890, 2.69982662677075, -4.48936929577383,
-               8.07237453994954, -20.2828318761854, 15.0000000048538}},
-      d2g1_w_{{140.000000016641, -263.163968874741, 196.996471291466,
-               -120.708905753218, 74.8764032980854, -27.9999999782328}},
-      d2g6_w_{{-27.9999999782335, 74.8764032980873, -120.708905753221,
-               196.996471291469, -263.163968874744, 140.000000016642}},
-      d3g1_w_{{-840.000000234078, 1798.12714381468, -1736.74461287884,
-               1322.01528240287, -879.397812956524, 335.999999851893}};
-  eigen_vec_d<5> d1w2_5_w_{{-2.48198050935042, 0.560400997591235e-8,
-                            3.49148624058567, -1.52752523062733,
-                            0.518019493788063}},
-      d1w3_5_w_{{0.750000000213852, -2.67316915534181, 0.360673032443906e-10,
-                 2.67316915534181, -0.750000000213853}},
-      d1w4_5_w_{{-0.518019493788065, 1.52752523062733, -3.49148624058568,
-                 -0.560400043118500e-8, 2.48198050935041}};
+  eigen_vec_d<6>  d3g1_w_{{-840.000000234078, 1798.12714381468, -1736.74461287884, 1322.01528240287, -879.397812956524, 335.999999851893}};
+  Eigen::Matrix<double, 3, 5> d1_w_5_{
+  {-2.48198050935042, 0.560400997591235e-8, 3.49148624058567, -1.52752523062733, 0.518019493788063},
+  {0.750000000213852, -2.67316915534181, 0.360673032443906e-10, 2.67316915534181, -0.750000000213853},
+  {-0.518019493788065, 1.52752523062733, -3.49148624058568, -0.560400043118500e-8, 2.48198050935041}
+  };    
+  
   // grid of ws, gs
   eigen_vec_c<7> ws7_;
   eigen_vec_c<6> ws_, gs_;
   eigen_vec_c<5> ws5_, gs5_;
   // derivatives
+  Eigen::Matrix<std::complex<double>, 6, 2> d1_;
+  Eigen::Matrix<std::complex<double>, 6, 2> d2_;
+  Eigen::Matrix<std::complex<double>, 6, 2> d3_;
+  Eigen::Matrix<std::complex<double>, 3, 1> d1_5_;
   std::complex<double> d1w1_, d1w2_, d1w3_, d1w4_, d1w5_, d1w6_, d2w1_, d2w2_,
       d2w3_, d2w4_, d2w5_, d2w6_, d3w1_, d3w2_, d3w3_, d3w4_, d3w5_, d3w6_,
       d4w1_, d1g1_, d1g2_, d1g3_, d1g4_, d1g5_, d1g6_, d2g1_, d2g2_, d2g3_,
       d2g4_, d2g5_, d2g6_, d3g1_;
   std::complex<double> d1w2_5_, d1w3_5_, d1w4_5_;
-  eigen_vec_c<6> dws_, dgs_, d2ws_, d2gs_, d3ws_;
   eigen_vec_c<5> dws5_;
   // WKB series and their derivatives
   eigen_vec_c<4> dds_, dsi_, dsf_, s_;
@@ -276,70 +230,55 @@ public:
     if constexpr (OSCODE_DEBUG) {
       std::cout << "ws_: \n" << ws_ << std::endl; 
     }
-    Eigen::Matrix<std::complex<double>, 6, 2> d1 = ((d1_w_ * ws_gs).array() / h).matrix(); 
-    Eigen::Matrix<std::complex<double>, 6, 2> d2 = ((d2_w_ * ws_gs).array() / (h * h)).matrix(); 
+    d1_ = ((d1_w_ * ws_gs).array() / h).matrix(); 
+    const auto h_sq = h * h;
+    d2_ = ((d2_w_ * ws_gs).array() / h_sq).matrix(); 
+    const auto h_cube = h_sq * h;
+    d3_ = ((d2_w_ * ws_gs).array() / h_cube).matrix(); 
+    d4w1_ = d4w1_w_.dot(ws7_) / (h_cube * h);
+    d3g1_ = d3g1_w_.dot(gs_) / h_cube;
+    d1w1_ = d1_(0, 0);
+    d1w2_ = d1_(1, 0);
+    d1w3_ = d1_(2, 0);
+    d1w4_ = d1_(3, 0);
+    d1w5_ = d1_(4, 0);
+    d1w6_ = d1_(5, 0);
 
-    // d1w1_ = d1w1_w_.dot(ws_) / h;
-    /*
-    d1w2();
-    d1w3();
-    d1w4();
-    d1w5();
-    d1w6();
-    d2w1();
-    d2w6();
-    */
-    d3w1();
-    d3w6();
-    d4w1();
-    d2g1();
-    d2g6();
-    d3g1();
-    d1w2_5();
-    d1w3_5();
-    d1w4_5();
-    if constexpr (OSCODE_DEBUG) {
-    std::cout << "d1: \n" << d1(0) << ", " << d1w1_ << ": " << d1(0) - d1w1_ << std::endl;
-    std::cout << "d2: \n" << d1(1) << ", " << d1w2_ << ": " << d1(1) - d1w2_ << std::endl;
-    std::cout << "d3: \n" << d1(2) << ", " << d1w3_ << ": " << d1(2) - d1w3_ << std::endl;
-    std::cout << "d4: \n" << d1(3) << ", " << d1w4_ << ": " << d1(3) - d1w4_ << std::endl;
-    std::cout << "d5: \n" << d1(4) << ", " << d1w5_ << ": " << d1(4) - d1w5_ << std::endl;
-    std::cout << "d6: \n" << d1(5) << ", " << d1w6_ << ": " << d1(5) - d1w6_ << std::endl;
-    }
-    dws_ = d1.col(0);
-    d1w1_ = d1(0, 0);
-    d1w2_ = d1(1, 0);
-    d1w3_ = d1(2, 0);
-    d1w4_ = d1(3, 0);
-    d1w5_ = d1(4, 0);
-    d1w6_ = d1(5, 0);
+    d1g1_ = d1_(0, 1);
+    d1g2_ = d1_(1, 1);
+    d1g3_ = d1_(2, 1);
+    d1g4_ = d1_(3, 1);
+    d1g5_ = d1_(4, 1);
+    d1g6_ = d1_(5, 1);
 
-    dgs_ = d1.col(1);
-    d1g1_ = d1(0, 1);
-    d1g2_ = d1(1, 1);
-    d1g3_ = d1(2, 1);
-    d1g4_ = d1(3, 1);
-    d1g5_ = d1(4, 1);
-    d1g6_ = d1(5, 1);
+    d2w1_ = d2_(0, 0);
+    d2w2_ = d2_(1, 0);
+    d2w3_ = d2_(2, 0);
+    d2w4_ = d2_(3, 0);
+    d2w5_ = d2_(4, 0);
+    d2w6_ = d2_(5, 0);
 
-    d2ws_ = d2.col(0);
-    d2w1_ = d2(0, 0);
-    d2w2_ = d2(1, 0);
-    d2w3_ = d2(2, 0);
-    d2w4_ = d2(3, 0);
-    d2w5_ = d2(4, 0);
-    d2w6_ = d2(5, 0);
+    d2g1_ = d2_(0, 1);
+    d2g2_ = d2_(1, 1);
+    d2g3_ = d2_(2, 1);
+    d2g4_ = d2_(3, 1);
+    d2g5_ = d2_(4, 1);
+    d2g6_ = d2_(5, 1);
 
-    d2gs_ = d1.col(1);
-    d2g1_ = d1(0, 1);
-    d2g2_ = d1(1, 1);
-    d2g3_ = d1(2, 1);
-    d2g4_ = d1(3, 1);
-    d2g5_ = d1(4, 1);
-    d2g6_ = d1(5, 1);
+    d3w1_ = d3_(0, 0);
+    d3w2_ = d3_(1, 0);
+    d3w3_ = d3_(2, 0);
+    d3w4_ = d3_(3, 0);
+    d3w5_ = d3_(4, 0);
+    d3w6_ = d3_(5, 0);
 
-//    dws_ = eigen_vec_c<6>{{d1w1_, d1w2_, d1w3_, d1w4_, d1w5_, d1w6_}};
-    dws5_ = eigen_vec_c<5>{{d1w1_, d1w2_5_, d1w3_5_, d1w4_5_, d1w6_}};
+    d3g1_ = d3_(0, 1);
+    d1_5_ = ((d1_w_5_ * ws5_).array() / h).matrix(); 
+    d1w2_5_ = d1_5_(0);
+    d1w3_5_ = d1_5_(1);
+    d1w4_5_ = d1_5_(2);
+
+    dws5_ = eigen_vec_c<5>{{d1_(0, 0), d1w2_5_, d1w3_5_, d1w4_5_, d1_(5, 0)}};
     // Higher order step
     // Calculate A, B
     fm_ = 1.0;
@@ -391,12 +330,11 @@ public:
       */
       //dgs_ = {d1g1_, d1g2_, d1g3_, d1g4_, d1g5_, d1g6_};
       //dgs_ = d1.col(1);
-      //d2ws_ = {d2w1_, d2w2_, d2w3_, d2w4_, d2w5_, d2w6_};
 
       eigen_vec_c<6> integrand6 =
           4.0 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
-          4.0 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
-          dws_.cwiseProduct(dws_).cwiseQuotient(
+          4.0 * d1_.col(0).cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
+          d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(
               ws_.cwiseProduct(ws_.cwiseProduct(ws_)));
       eigen_vec_c<6> s1_interp;
       for (int i = 0; i <= 5; i++) {
@@ -405,14 +343,14 @@ public:
       auto ws_cwise = ws_.cwiseProduct(ws_).eval();
       eigen_vec_c<6> s2_interp =
           -1 / 4.0 *
-          (dws_.cwiseQuotient(ws_cwise) + 2.0 * gs_.cwiseQuotient(ws_));
+          (d1_.col(0).cwiseQuotient(ws_cwise) + 2.0 * gs_.cwiseQuotient(ws_));
       eigen_vec_c<6> s3_interp =
           1 / 4.0 * (gs_.cwiseProduct(gs_).cwiseQuotient((ws_cwise))) +
-          1 / 4.0 * (dgs_.cwiseQuotient(ws_cwise)) -
+          1 / 4.0 * (d1_.col(1).cwiseQuotient(ws_cwise)) -
           3 / 16.0 *
-              (dws_.cwiseProduct(dws_).cwiseQuotient(
+              (d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(
                   ws_cwise.cwiseProduct(ws_cwise))) +
-          1 / 8.0 * (d2ws_.cwiseQuotient(ws_cwise));
+          1 / 8.0 * (d2_.col(0).cwiseQuotient(ws_cwise));
 
       // S0
       eigen_vec_c<6> s0_vdm_vec =
@@ -478,26 +416,6 @@ public:
     doxs.resize(docount);
     dodxs.resize(docount);
     // Compute some derivatives only necessary for dense output
-    d1g2();
-    d1g3();
-    d1g4();
-    d1g5();
-    d2w2();
-    d2w3();
-    d2w4();
-    d2w5();
-    d2g2();
-    d2g3();
-    d2g4();
-    d2g5();
-    d3w2();
-    d3w3();
-    d3w4();
-    d3w5();
-    dgs_ = {d1g1_, d1g2_, d1g3_, d1g4_, d1g5_, d1g6_};
-    d2ws_ = {d2w1_, d2w2_, d2w3_, d2w4_, d2w5_, d2w6_};
-    d2gs_ = {d2g1_, d2g2_, d2g3_, d2g4_, d2g5_, d2g6_};
-    d3ws_ = {d3w1_, d3w2_, d3w3_, d3w4_, d3w5_, d3w6_};
 
     // Loop over dense output points
     auto dox_it = doxs.begin();
@@ -512,8 +430,8 @@ public:
       // Dense output x
       eigen_vec_c<6> integrand6 =
           4.0 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
-          4.0 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
-          dws_.cwiseProduct(dws_).cwiseQuotient(
+          4.0 * d1_.col(0).cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
+          d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(
               ws_.cwiseProduct(ws_.cwiseProduct(ws_)));
 
       std::complex<double> s0 =
@@ -523,19 +441,19 @@ public:
       s1 = dense_interpolate(dodws6, s1_interp) - s1;
       std::complex<double> s2 = dense_integrate(dows6, integrand6);
       eigen_vec_c<6> s2_interp = -1 / 4.0 *
-                                 (dws_.cwiseQuotient(ws_.cwiseProduct(ws_)) +
+                                 (d1_.col(0).cwiseQuotient(ws_.cwiseProduct(ws_)) +
                                   2.0 * gs_.cwiseQuotient(ws_));
       s2 = dense_interpolate(dodws6, s2_interp) - 1 / 8.0 * s2;
 
       eigen_vec_c<6> s3_interp =
           1 / 4.0 *
               (gs_.cwiseProduct(gs_).cwiseQuotient((ws_.cwiseProduct(ws_)))) +
-          1 / 4.0 * (dgs_.cwiseQuotient(ws_.cwiseProduct(ws_))) -
+          1 / 4.0 * (d1_.col(1).cwiseQuotient(ws_.cwiseProduct(ws_))) -
           3 / 16.0 *
-              (dws_.cwiseProduct(dws_).cwiseQuotient(
+              (d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(
                   ws_.cwiseProduct(ws_).cwiseProduct(ws_.cwiseProduct(ws_)))) +
           1 / 8.0 *
-              (d2ws_.cwiseQuotient(ws_.cwiseProduct(ws_).cwiseProduct(ws_)));
+              (d2_.col(0).cwiseQuotient(ws_.cwiseProduct(ws_).cwiseProduct(ws_)));
       std::complex<double> s3 = dense_interpolate(dodws6, s3_interp);
 
       dense_s_ = eigen_vec_c<4>{{s0, s1, std::complex<double>(0, 1) * s2, s3}};
@@ -603,30 +521,30 @@ public:
       std::complex<double> ds0 =
           std::complex<double>(0, 1) * dense_interpolate(dodws6, ws_);
       std::complex<double> ds1 = dense_interpolate(dodws6, gs_);
-      eigen_vec_c<6> ds1_interp = -1. / 2 * dws_.cwiseQuotient(ws_);
+      eigen_vec_c<6> ds1_interp = -1. / 2 * d1_.col(0).cwiseQuotient(ws_);
       ds1 = dense_interpolate(dodws6, ds1_interp) - ds1;
       eigen_vec_c<6> ds2_interp =
           -1. / 2 * gs_.cwiseProduct(gs_.cwiseQuotient(ws_)) -
-          1. / 2 * dgs_.cwiseQuotient(ws_) +
+          1. / 2 * d1_.col(1).cwiseQuotient(ws_) +
           3. / 8 *
-              (dws_.cwiseProduct(dws_))
+              (d1_.col(0).cwiseProduct(d1_.col(0)))
                   .cwiseQuotient((ws_.cwiseProduct(ws_)).cwiseProduct(ws_)) -
-          1. / 4 * d2ws_.cwiseQuotient(ws_.cwiseProduct(ws_));
+          1. / 4 * d2_.col(0).cwiseQuotient(ws_.cwiseProduct(ws_));
       std::complex<double> ds2 = dense_interpolate(dodws6, ds2_interp);
       eigen_vec_c<6> ds3_interp =
           1. / 8.0 *
-          (d3ws_.cwiseQuotient(ws_.cwiseProduct(ws_.cwiseProduct(ws_))) +
-           2 * d2gs_.cwiseQuotient(ws_.cwiseProduct(ws_)) -
-           6 * (dws_.cwiseProduct(d2ws_))
+          (d2_.col(1).cwiseQuotient(ws_.cwiseProduct(ws_.cwiseProduct(ws_))) +
+           2 * d2_.col(1).cwiseQuotient(ws_.cwiseProduct(ws_)) -
+           6 * (d1_.col(0).cwiseProduct(d2_.col(0)))
                    .cwiseQuotient(ws_.cwiseProduct(
                        ws_.cwiseProduct(ws_.cwiseProduct(ws_)))) +
-           6 * (dws_.cwiseProduct(dws_.cwiseProduct(dws_)))
+           6 * (d1_.col(0).cwiseProduct(d1_.col(0).cwiseProduct(d1_.col(0))))
                    .cwiseQuotient(ws_.cwiseProduct(ws_.cwiseProduct(
                        ws_.cwiseProduct(ws_.cwiseProduct(ws_))))) -
-           4 * (gs_.cwiseProduct(gs_) + dgs_)
-                   .cwiseProduct(dws_)
+           4 * (gs_.cwiseProduct(gs_) + d1_.col(1))
+                   .cwiseProduct(d1_.col(0))
                    .cwiseQuotient(ws_.cwiseProduct(ws_.cwiseProduct(ws_))) +
-           4 * dgs_.cwiseProduct(gs_).cwiseQuotient(
+           4 * d1_.col(1).cwiseProduct(gs_).cwiseQuotient(
                    ws_.cwiseProduct(ws_.cwiseProduct(ws_.cwiseProduct(ws_)))));
       std::complex<double> ds3 = dense_interpolate(dodws6, ds3_interp);
       dense_ds_ =
@@ -738,7 +656,7 @@ void WKBSolver::am() { am_ = (dx_ - x_ * dfpi_) / (dfmi_ - dfpi_); };
 void WKBSolver::bp() {
   bp_ = (ddx_ * dfmi_ - dx_ * ddfm_) / (ddfp_ * dfmi_ - ddfm_ * dfpi_);
 };
-
+// Virtual overloaded funcs
 void WKBSolver::bm() {
   bm_ = (ddx_ * dfpi_ - dx_ * ddfp_) / (ddfm_ * dfpi_ - ddfp_ * dfmi_);
 };
@@ -760,76 +678,11 @@ void WKBSolver::s() {
   s_ = {s0(0), 0.0, 0.0, 0.0};
   s_error = {s0(1), 0.0, 0.0, 0.0};
 };
-
-void WKBSolver::d1w1() { d1w1_ = d1w1_w_.dot(ws_) / h; };
-
-void WKBSolver::d1w2() { d1w2_ = d1w2_w_.dot(ws_) / h; };
-
-void WKBSolver::d1w3() { d1w3_ = d1w3_w_.dot(ws_) / h; };
-
-void WKBSolver::d1w4() { d1w4_ = d1w4_w_.dot(ws_) / h; };
-
-void WKBSolver::d1w5() { d1w5_ = d1w5_w_.dot(ws_) / h; };
-
-void WKBSolver::d1w6() { d1w6_ = d1w6_w_.dot(ws_) / h; };
-
-void WKBSolver::d2w1() { d2w1_ = d2w1_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d2w2() { d2w2_ = d2w2_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d2w3() { d2w3_ = d2w3_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d2w4() { d2w4_ = d2w4_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d2w5() { d2w5_ = d2w5_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d2w6() { d2w6_ = d2w6_w_.dot(ws_) / (h * h); };
-
-void WKBSolver::d3w1() { d3w1_ = d3w1_w_.dot(ws_) / (h * h * h); };
-
-void WKBSolver::d3w2() { d3w2_ = d3w2_w_.dot(ws_) / (h * h * h); };
-
-void WKBSolver::d3w3() { d3w3_ = d3w3_w_.dot(ws_) / (h * h * h); };
-
-void WKBSolver::d3w4() { d3w4_ = d3w4_w_.dot(ws_) / (h * h * h); };
-
-void WKBSolver::d3w5() { d3w5_ = d3w5_w_.dot(ws_) / (h * h * h); };
-
-void WKBSolver::d3w6() { d3w6_ = d3w6_w_.dot(ws_) / (h * h * h); };
-
+/// end overloaded funcs
 void WKBSolver::d4w1() { d4w1_ = d4w1_w_.dot(ws7_) / (h * h * h * h); };
-
-void WKBSolver::d1g1() { d1g1_ = d1g1_w_.dot(gs_) / h; };
-
-void WKBSolver::d1g2() { d1g2_ = d1w2_w_.dot(gs_) / h; };
-
-void WKBSolver::d1g3() { d1g3_ = d1w3_w_.dot(gs_) / h; };
-
-void WKBSolver::d1g4() { d1g4_ = d1w4_w_.dot(gs_) / h; };
-
-void WKBSolver::d1g5() { d1g5_ = d1w5_w_.dot(gs_) / h; };
-
-void WKBSolver::d1g6() { d1g6_ = d1g6_w_.dot(gs_) / h; };
-
-void WKBSolver::d2g1() { d2g1_ = d2g1_w_.dot(gs_) / (h * h); };
-
-void WKBSolver::d2g2() { d2g2_ = d2w2_w_.dot(gs_) / (h * h); };
-
-void WKBSolver::d2g3() { d2g3_ = d2w3_w_.dot(gs_) / (h * h); };
-
-void WKBSolver::d2g4() { d2g4_ = d2w4_w_.dot(gs_) / (h * h); };
-
-void WKBSolver::d2g5() { d2g5_ = d2w5_w_.dot(gs_) / (h * h); };
-
-void WKBSolver::d2g6() { d2g6_ = d2g6_w_.dot(gs_) / (h * h); };
 
 void WKBSolver::d3g1() { d3g1_ = d3g1_w_.dot(gs_) / (h * h * h); };
 
-void WKBSolver::d1w2_5() { d1w2_5_ = d1w2_5_w_.dot(ws5_) / h; };
-
-void WKBSolver::d1w3_5() { d1w3_5_ = d1w3_5_w_.dot(ws5_) / h; };
-
-void WKBSolver::d1w4_5() { d1w4_5_ = d1w4_5_w_.dot(ws5_) / h; };
 
 //////////////////////////////////
 
@@ -907,8 +760,8 @@ private:
   virtual void s() final {
     eigen_vec_c<6> integrand6 =
         4 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
-        4 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
-        dws_.cwiseProduct(dws_).cwiseQuotient(
+        4 * d1_.col(0).cwiseProduct(gs_).cwiseQuotient(ws_.cwiseProduct(ws_)) +
+        d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(
             ws_.cwiseProduct(ws_.cwiseProduct(ws_)));
     eigen_vec_c<5> integrand5 =
         4 * gs5_.cwiseProduct(gs5_).cwiseQuotient(ws5_) +
@@ -920,8 +773,8 @@ private:
     s1(0) = std::log(std::sqrt(ws_(0) / ws_(5))) - s1(0);
     eigen_vec_c<2> s2 = integrate(integrand6, integrand5);
     s2(0) = -1 / 4.0 *
-                (dws_(5) / std::pow(ws_(5), 2) + 2.0 * gs_(5) / ws_(5) -
-                 dws_(0) / std::pow(ws_(0), 2) - 2.0 * gs_(0) / ws_(0)) -
+                (d1_.col(0)(5) / std::pow(ws_(5), 2) + 2.0 * gs_(5) / ws_(5) -
+                 d1_.col(0)(0) / std::pow(ws_(0), 2) - 2.0 * gs_(0) / ws_(0)) -
             1 / 8.0 * s2(0);
     s_ =
         eigen_vec_c<4>{{s0(0), s1(0), std::complex<double>(0, 1) * s2(0), 0.0}};
@@ -1002,8 +855,8 @@ private:
     auto ws_cwise = ws_.cwiseProduct(ws_).eval();
     eigen_vec_c<6> integrand6 =
         4.0 * gs_.cwiseProduct(gs_).cwiseQuotient(ws_) +
-        4.0 * dws_.cwiseProduct(gs_).cwiseQuotient(ws_cwise) +
-        dws_.cwiseProduct(dws_).cwiseQuotient(ws_.cwiseProduct(ws_cwise));
+        4.0 * d1_.col(0).cwiseProduct(gs_).cwiseQuotient(ws_cwise) +
+        d1_.col(0).cwiseProduct(d1_.col(0)).cwiseQuotient(ws_.cwiseProduct(ws_cwise));
     auto ws5_cwise = ws5_.cwiseProduct(ws5_);
     eigen_vec_c<5> integrand5 =
         4.0 * gs5_.cwiseProduct(gs5_).cwiseQuotient(ws5_) +
@@ -1014,8 +867,8 @@ private:
     s1(0) = std::log(std::sqrt(ws_(0) / ws_(5))) - s1(0);
     eigen_vec_c<2> s2 = integrate(integrand6, integrand5);
     s2(0) = -1 / 4.0 *
-                (dws_(5) / (ws_(5) * ws_(5)) + 2.0 * gs_(5) / ws_(5) -
-                 dws_(0) / (ws_(0) * ws_(0)) - 2.0 * gs_(0) / ws_(0)) -
+                (d1_.col(0)(5) / (ws_(5) * ws_(5)) + 2.0 * gs_(5) / ws_(5) -
+                 d1_.col(0)(0) / (ws_(0) * ws_(0)) - 2.0 * gs_(0) / ws_(0)) -
             1 / 8.0 * s2(0);
     std::complex<double> s3 =
         (1 / 4.0 *
@@ -1023,8 +876,8 @@ private:
               gs_(0) * gs_(0) / (ws_(0) * ws_(0))) +
          1 / 4.0 * (d1g6_ / (ws_(5) * ws_(5)) - d1g1_ / (ws_(0) * ws_(0))) -
          3 / 16.0 *
-             (dws_(5) * dws_(5) / (ws_(5) * ws_(5) * ws_(5) * ws_(5)) -
-              dws_(0) * dws_(0) / (ws_(0) * ws_(0) * ws_(0) * ws_(0))) +
+             (d1_.col(0)(5) * d1_.col(0)(5) / (ws_(5) * ws_(5) * ws_(5) * ws_(5)) -
+              d1_.col(0)(0) * d1_.col(0)(0) / (ws_(0) * ws_(0) * ws_(0) * ws_(0))) +
          1 / 8.0 *
              (d2w6_ / (ws_(5) * ws_(5) * ws_(5)) -
               d2w1_ / (ws_(0) * ws_(0) * ws_(0))));
