@@ -1,6 +1,11 @@
-*
+/examples/*
 !/examples/*.py
 !/examples/*.ipynb
+!/examples/*.cpp
 !/examples/images/**
-!Dockerfile
 !/JOSS-paper/*
+env/*
+.eggs/*
+.vscode/*
+build/*
+_pyoscode.cpython-*.so

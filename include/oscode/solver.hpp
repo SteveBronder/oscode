@@ -233,7 +233,6 @@ public:
     std::vector<double> inner_dotimes;
     std::vector<std::complex<double>> inner_dosols, inner_dodsols;
     Eigen::Matrix<std::complex<double>, 1, 2> y_dense_rk;
-    std::complex<double> x_dense_rk, dx_dense_rk;
     // Experimental continuous solution, vandermonde representation
     Eigen::Matrix<std::complex<double>, 7, 1> xvdm;
     // NOTE: If any of these are resized and cause a memory allocation the program will segfault

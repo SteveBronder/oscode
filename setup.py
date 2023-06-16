@@ -13,8 +13,9 @@ def readme(short=False):
 pyoscode_module = Extension(
     name="_pyoscode",
     sources=["pyoscode/_pyoscode.cpp"],
-    include_dirs=['include','pyoscode',np.get_include()],
+    include_dirs=['include','pyoscode',np.get_include(),'deps/eigen'],
     depends=["pyoscode/_python.hpp", "pyoscode/_pyoscode.hpp"],
+    # CHANGE THIS BACK TO O3 BEFORE MERGE
     extra_compile_args=['-std=c++17','-Wall', '-O1']
     )
 

@@ -168,7 +168,7 @@ public:
   // constructor
   WKBSolver(){};
   WKBSolver(de_system &de_sys, int order) : order_(order){};
-
+  virtual ~WKBSolver() {}
     Eigen::Matrix<std::complex<double>, 3, 2>
   step(bool dense_output, std::complex<double> x0, std::complex<double> dx0, double t0, double h0,
        const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
