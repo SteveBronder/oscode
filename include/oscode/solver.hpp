@@ -69,6 +69,7 @@ private:
     };
     return new WKBSolver3(*de_sys_, order);
   }
+
 public:
   /** Constructor for when dense output was not requested. Sets up solution of
    * the ODE.
@@ -86,13 +87,14 @@ public:
    * @param[in] full_output file name to write results to
    *
    */
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double>
-    dx0, double t_i, double t_f, int o=3, double r_tol=1e-4, double a_tol=0.0,
-    double h_0=1, const char* full_output="") : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
-            atol(a_tol), h0(h_0),
-            x(x0), dx(dx0), order(o), fo(full_output),
-            wkbsolver(std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))), 
-            rksolver(RKSolver(*de_sys_)) {
+  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+           double t_i, double t_f, int o = 3, double r_tol = 1e-4,
+           double a_tol = 0.0, double h_0 = 1, const char *full_output = "")
+      : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol), atol(a_tol), h0(h_0),
+        x(x0), dx(dx0), order(o), fo(full_output),
+        wkbsolver(
+            std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))),
+        rksolver(RKSolver(*de_sys_)) {
 
     // Determine direction of integration, fend>0 and integration ends when
     // it crosses zero
@@ -126,7 +128,7 @@ public:
     dotimes.push_back(t_f);
     dosol.push_back(x0);
     dodsol.push_back(dx0);
-    //dot_it = dotimes.end();
+    // dot_it = dotimes.end();
     dense_output = false;
   }
   /** Constructor for when dense output was requested. Sets up solution of the
@@ -148,14 +150,15 @@ public:
    *
    */
   template <typename X = double>
-  Solution(de_system &de_sys,
-    std::complex<double> x0, std::complex<double> dx0, double t_i, double t_f,
-    const X &do_times, int o=3, double r_tol=1e-4, double a_tol=0.0,
-    double h_0=1, const char* full_output="") : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol),
-            atol(a_tol), h0(h_0),
-            x(x0), dx(dx0), order(o), fo(full_output),
-            wkbsolver(std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))), 
-            rksolver(RKSolver(*de_sys_)) {
+  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+           double t_i, double t_f, const X &do_times, int o = 3,
+           double r_tol = 1e-4, double a_tol = 0.0, double h_0 = 1,
+           const char *full_output = "")
+      : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol), atol(a_tol), h0(h_0),
+        x(x0), dx(dx0), order(o), fo(full_output),
+        wkbsolver(
+            std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))),
+        rksolver(RKSolver(*de_sys_)) {
 
     // Set parameters for solver
     // Determine direction of integration, fend>0 and integration ends when
@@ -171,9 +174,9 @@ public:
       // forward
       fend = tf - t;
       fnext = fend;
-        de_sys_->Winterp_.sign_ = de_sys_->is_interpolated_;
-        de_sys_->Ginterp_.sign_ = de_sys_->is_interpolated_;
-        sign = !de_sys_->is_interpolated_;
+      de_sys_->Winterp_.sign_ = de_sys_->is_interpolated_;
+      de_sys_->Ginterp_.sign_ = de_sys_->is_interpolated_;
+      sign = !de_sys_->is_interpolated_;
     } else {
       throw std::logic_error(
           "Direction of integration in conflict with direction of initial "
@@ -199,7 +202,7 @@ public:
       std::sort(dotimes.begin(), dotimes.end());
     }
 
-    //dot_it = dotimes.begin();
+    // dot_it = dotimes.begin();
     dense_output = true;
   }
   /** \brief Function to solve the ODE \f$ \ddot{x} + 2\gamma(t)\dot{x} +
@@ -235,8 +238,8 @@ public:
     Eigen::Matrix<std::complex<double>, 1, 2> y_dense_rk;
     // Experimental continuous solution, vandermonde representation
     Eigen::Matrix<std::complex<double>, 7, 1> xvdm;
-    // NOTE: If any of these are resized and cause a memory allocation the program will segfault
-    // since the iterator will be invalidated.
+    // NOTE: If any of these are resized and cause a memory allocation the
+    // program will segfault since the iterator will be invalidated.
     auto it_dosol = dosol.begin();
     auto it_dodsol = dodsol.begin();
     auto dot_it = dotimes.begin();
@@ -250,12 +253,14 @@ public:
       // Keep updating stepsize until step is accepted
       while (true) {
         // RK step
-        Eigen::Matrix<std::complex<double>, 2, 2> rkstep = rksolver.step(x, dx, t, h);
+        Eigen::Matrix<std::complex<double>, 2, 2> rkstep =
+            rksolver.step(x, dx, t, h);
         auto rkx = rkstep.col(0);
         auto rkerr = rkstep.col(1);
         // WKB step
-        Eigen::Matrix<std::complex<double>, 3, 2> wkbstep = wkbsolver->step(dense_output, x, dx, t, h, rksolver.ws, rksolver.gs,
-                                  rksolver.ws5, rksolver.gs5);
+        Eigen::Matrix<std::complex<double>, 3, 2> wkbstep =
+            wkbsolver->step(dense_output, x, dx, t, h, rksolver.ws, rksolver.gs,
+                            rksolver.ws5, rksolver.gs5);
         auto wkbx = wkbstep.row(0);
         auto wkberr = wkbstep.row(2);
         truncerr = wkbstep.row(1);
@@ -265,37 +270,46 @@ public:
         truncerr(1) = std::max(1e-10, abs(truncerr(1)));
         // dominant error calculation
         // Error scale measures
-        errmeasure_rk(0) = std::abs(rkerr(0)) / (std::abs(rkx(0)) * rtol + atol);
-        errmeasure_rk(1) = std::abs(rkerr(1)) / (std::abs(rkx(1)) * rtol + atol);
-        errmeasure_wkb(0) = std::abs(truncerr(0)) / (std::abs(wkbx(0)) * rtol + atol),
-        errmeasure_wkb(1) = std::abs(truncerr(1)) / (std::abs(wkbx(1)) * rtol + atol),
-        errmeasure_wkb(2) = std::abs(wkberr(0)) / (std::abs(wkbx(0)) * rtol + atol),
-        errmeasure_wkb(3) = std::abs(wkberr(1)) / (std::abs(wkbx(1)) * rtol + atol);
+        errmeasure_rk(0) =
+            std::abs(rkerr(0)) / (std::abs(rkx(0)) * rtol + atol);
+        errmeasure_rk(1) =
+            std::abs(rkerr(1)) / (std::abs(rkx(1)) * rtol + atol);
+        errmeasure_wkb(0) =
+            std::abs(truncerr(0)) / (std::abs(wkbx(0)) * rtol + atol),
+        errmeasure_wkb(1) =
+            std::abs(truncerr(1)) / (std::abs(wkbx(1)) * rtol + atol),
+        errmeasure_wkb(2) =
+            std::abs(wkberr(0)) / (std::abs(wkbx(0)) * rtol + atol),
+        errmeasure_wkb(3) =
+            std::abs(wkberr(1)) / (std::abs(wkbx(1)) * rtol + atol);
         double rkdelta = std::max(1e-10, errmeasure_rk.maxCoeff(&maxindex_rk));
-        bool check_wkbdelta = std::isnan(errmeasure_wkb.maxCoeff()) ||
-            std::isinf(std::real(wkbx(0))) ||
-            std::isnan(std::real(wkbx(0))) ||
-            std::isinf(std::imag(wkbx(0))) ||
-            std::isnan(std::imag(wkbx(0))) ||
-            std::isinf(std::real(wkbx(1))) ||
-            std::isnan(std::real(wkbx(1))) ||
-            std::isinf(std::imag(wkbx(1))) ||
-            std::isnan(std::imag(wkbx(1)));
-        double wkbdelta = check_wkbdelta ? std::numeric_limits<double>::infinity() : std::max(1e-10, errmeasure_wkb.maxCoeff(&maxindex_wkb));
+        bool check_wkbdelta =
+            std::isnan(errmeasure_wkb.maxCoeff()) ||
+            std::isinf(std::real(wkbx(0))) || std::isnan(std::real(wkbx(0))) ||
+            std::isinf(std::imag(wkbx(0))) || std::isnan(std::imag(wkbx(0))) ||
+            std::isinf(std::real(wkbx(1))) || std::isnan(std::real(wkbx(1))) ||
+            std::isinf(std::imag(wkbx(1))) || std::isnan(std::imag(wkbx(1)));
+        double wkbdelta =
+            check_wkbdelta
+                ? std::numeric_limits<double>::infinity()
+                : std::max(1e-10, errmeasure_wkb.maxCoeff(&maxindex_wkb));
         // predict next stepsize
         const double hrk = h * std::pow((1.0 / rkdelta), 1.0 / nrk);
-        const double hwkb = h * std::pow(1.0 / wkbdelta, 1.0 / (maxindex_wkb <= 1 ? nwkb1 : nwkb2));
+        const double hwkb =
+            h *
+            std::pow(1.0 / wkbdelta, 1.0 / (maxindex_wkb <= 1 ? nwkb1 : nwkb2));
         // choose step with larger predicted stepsize
         const bool wkb = std::abs(hwkb) >= std::abs(hrk);
         std::complex<double> xnext = wkb ? wkbx(0) : rkx(0);
         std::complex<double> dxnext = wkb ? wkbx(1) : rkx(1);
         // if wkb step chosen, ignore truncation error in
         // stepsize-increase
-        wkbdelta = wkb ? std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff()) : wkbdelta;
+        wkbdelta =
+            wkb ? std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff()) : wkbdelta;
         double hnext = wkb ? h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2) : hrk;
         totsteps += 1;
         // Checking for too many steps and low acceptance ratio:
-        if (totsteps > 5000) {
+        if (totsteps % 5000) {
           std::cerr << "Warning: the solver took " << totsteps
                     << " steps, and may take a while to converge." << std::endl;
           if (ssteps / totsteps < 0.05) {
@@ -312,8 +326,9 @@ public:
           }
           if (dense_output) {
             //                    std::cout << *dot_it << std::endl;
-            for (;(*dot_it - t >= 0 && tnext - *dot_it >= 0) ||
-                   (*dot_it - t <= 0 && tnext - *dot_it <= 0); ++dot_it) {
+            for (; (*dot_it - t >= 0 && tnext - *dot_it >= 0) ||
+                   (*dot_it - t <= 0 && tnext - *dot_it <= 0);
+                 ++dot_it) {
               inner_dotimes.push_back(*dot_it);
             }
             if (inner_dotimes.size() > 0) {
@@ -322,23 +337,27 @@ public:
               if (wkb) {
                 if (OSCODE_DEBUG) {
                   // Dense output after successful WKB step
-                  std::cout << "Attempting " << inner_dosols.size() << " dense output points after successful WKB step from " << t << " to " << t+h << std::endl;
+                  std::cout
+                      << "Attempting " << inner_dosols.size()
+                      << " dense output points after successful WKB step from "
+                      << t << " to " << t + h << std::endl;
                 }
                 wkbsolver->dense_step(t, h, inner_dotimes, inner_dosols,
                                       inner_dodsols);
               } else {
                 // Dense output after successful RK step
-                for (auto it = inner_dotimes.begin(); it != inner_dotimes.end(); it++) {
-                  rksolver.dense_step(t, h, x, dx, inner_dotimes, inner_dosols,
-                                      inner_dodsols);
+                for (auto it = inner_dotimes.begin(); it != inner_dotimes.end();
+                     it++) {
+                  rksolver.dense_step(inner_dosols, inner_dodsols, t, h, x, dx, inner_dotimes);
                 }
               }
             }
           }
-          for (auto inner_it = inner_dosols.begin(), inner_dit = inner_dodsols.begin();
-           inner_it != inner_dosols.end() && it_dosol != dosol.end() &&
-           inner_dit != inner_dodsols.end() &&
-           it_dodsol != dodsol.end(); it_dodsol++, it_dosol++, inner_it++, inner_dit++) {
+          for (auto inner_it = inner_dosols.begin(),
+                    inner_dit = inner_dodsols.begin();
+               inner_it != inner_dosols.end() && it_dosol != dosol.end() &&
+               inner_dit != inner_dodsols.end() && it_dodsol != dodsol.end();
+               it_dodsol++, it_dosol++, inner_it++, inner_dit++) {
             *it_dosol = *inner_it;
             *it_dodsol = *inner_dit;
           }
@@ -389,10 +408,11 @@ public:
 
     // If integrating backwards, reverse dense output (because it will have been
     // reversed at the start)
-    if ((de_sys_->is_interpolated_ && !de_sys_->Winterp_.sign_) || (!de_sys_->is_interpolated_ && !sign)) {
-        std::reverse(dotimes.begin(), dotimes.end());
-        std::reverse(dosol.begin(), dosol.end());
-        std::reverse(dodsol.begin(), dodsol.end());
+    if ((de_sys_->is_interpolated_ && !de_sys_->Winterp_.sign_) ||
+        (!de_sys_->is_interpolated_ && !sign)) {
+      std::reverse(dotimes.begin(), dotimes.end());
+      std::reverse(dosol.begin(), dosol.end());
+      std::reverse(dodsol.begin(), dodsol.end());
     }
 
     // Write output to file if prompted
@@ -433,7 +453,4 @@ public:
       f.close();
     }
   }
-
-
-
 };

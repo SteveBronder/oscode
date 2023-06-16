@@ -61,14 +61,14 @@ private:
   // Butcher tablaus
   /* clang-format off */
   Eigen::Matrix<double, 5, 5> butcher_a5{
-    {0.1174723380352676535740, 0,                        0,                       0,                        0},
-   {-0.1862479800651504276304, 0.5436322218248278794734, 0,                       0,                        0},
-   {-0.6064303885508280518989, 1, 0.2490461467911506000559,                       0,                        0},
-    {2.899356540015731406420, -4.368525611566240669139,  2.133806714786316899991, 0.2178900187289247091542, 0},
-   {18.67996349995727204273, -28.85057783973131956546,  10.72053408420926869789,  1.414741756508049078612, -0.9646615009432702537787}
+   { 0.1174723380352676535740, 0,                        0,                        0,                        0},
+   {-0.1862479800651504276304, 0.5436322218248278794734, 0,                        0,                        0},
+   {-0.6064303885508280518989, 1,                        0.2490461467911506000559, 0,                        0},
+   { 2.899356540015731406420, -4.368525611566240669139,  2.133806714786316899991,  0.2178900187289247091542, 0},
+   {18.67996349995727204273, -28.85057783973131956546,  10.72053408420926869789,   1.414741756508049078612, -0.9646615009432702537787}
   };
   Eigen::Matrix<double, 3, 3> butcher_a4{
-    {0.172673164646011428100, -1.568317088384971429762, -8.769507466172720011410},
+   { 0.172673164646011428100, -1.568317088384971429762,  -8.769507466172720011410},
    { 0,                        2.395643923738960001662,  10.97821961869480000808},
    { 0,                        0,                        -1.208712152522079996671}
   };
@@ -90,26 +90,34 @@ private:
   std::complex<double> wi, gi;
 
 public:
-  std::tuple<std::function<std::complex<double>(double)>, std::function<std::complex<double>(double)>> wi_gi_funcs;
-  auto setup_wi_gi_funcs(de_system* de_sys) {
-    std::tuple<std::function<std::complex<double>(double)>, std::function<std::complex<double>(double)>> funcs;
+  std::tuple<std::function<std::complex<double>(double)>,
+             std::function<std::complex<double>(double)>>
+      wi_gi_funcs;
+  auto setup_wi_gi_funcs(de_system *de_sys) {
+    std::tuple<std::function<std::complex<double>(double)>,
+               std::function<std::complex<double>(double)>>
+        funcs;
 
-  if (de_sys_->is_interpolated_) {
-    if (de_sys_->islogw_) {
-      std::get<0>(funcs) = [de_sys](double x) { return de_sys->Winterp_.expit(x); };
+    if (de_sys_->is_interpolated_) {
+      if (de_sys_->islogw_) {
+        std::get<0>(funcs) = [de_sys](double x) {
+          return de_sys->Winterp_.expit(x);
+        };
+      } else {
+        std::get<0>(funcs) = [de_sys](double x) { return de_sys->Winterp_(x); };
+      }
+      if (de_sys_->islogg_) {
+        std::get<1>(funcs) = [de_sys](double x) {
+          return de_sys->Ginterp_.expit(x);
+        };
+      } else {
+        std::get<1>(funcs) = [de_sys](double x) { return de_sys->Ginterp_(x); };
+      }
     } else {
-      std::get<0>(funcs) = [de_sys](double x) { return de_sys->Winterp_(x); };
+      std::get<0>(funcs) = [ww = this->w_](double x) { return ww(x); };
+      std::get<1>(funcs) = [gg = this->g_](double x) { return gg(x); };
     }
-    if (de_sys_->islogg_) {
-      std::get<1>(funcs) = [de_sys](double x) { return de_sys->Ginterp_.expit(x); };
-    } else {
-      std::get<1>(funcs) = [de_sys](double x) { return de_sys->Ginterp_(x);};
-    }
-  } else {
-    std::get<0>(funcs) = [ww = this->w_](double x) { return ww(x);};
-    std::get<1>(funcs) = [gg = this->g_](double x) { return gg(x);};
-  }
-  return funcs;
+    return funcs;
   }
   /** Callable that gives the frequency term in the ODE at a given time */
   // std::function<std::complex<double>(double)> w;
@@ -139,10 +147,26 @@ public:
   Eigen::Matrix<std::complex<double>, 1, 2>
   dense_point(std::complex<double> x, std::complex<double> dx,
               const Eigen::Matrix<std::complex<double>, 6, 2> &k5);
-  void dense_step(double t0, double h0, std::complex<double> y0,
-                  std::complex<double> dy0, const std::vector<double> &dots,
-                  std::vector<std::complex<double>> &doxs,
-                  std::vector<std::complex<double>> &dodxs);
+  void dense_step(std::vector<std::complex<double>> &doxs,
+                            std::vector<std::complex<double>> &dodxs,
+                            double t0, double h0, std::complex<double> y0,
+                            std::complex<double> dy0,
+                            const std::vector<double> &dots) {
+    const auto docount = dots.size();
+    Eigen::Matrix<double, -1, 4> R_dense(docount, 4);
+    Eigen::Map<const Eigen::Array<double, -1, 1>> dot_map(dots.data(), docount);
+    R_dense.col(0) = (dot_map - t0) / h0;
+    R_dense.col(1) = R_dense.col(0).array().square();
+    R_dense.col(2) = R_dense.col(1).array() * R_dense.col(0).array();
+    R_dense.col(3) = R_dense.col(2).array() * R_dense.col(0).array();
+    // Q_dense is used once and could be inline on the line for Y_dense
+    Eigen::Matrix<std::complex<double>, 2, 4> Q_dense = k_dense * P_dense;
+    Eigen::Matrix<std::complex<double>, 2, -1> Y_dense = Q_dense * R_dense.transpose();
+    Eigen::Map<Eigen::Array<std::complex<double>, -1, 1>> doxs_map(doxs.data(), docount);
+    Eigen::Map<Eigen::Array<std::complex<double>, -1, 1>> dodxs_map(dodxs.data(), docount);
+    doxs_map = y0 + Y_dense.row(0).array();    
+    dodxs_map = dy0 + Y_dense.row(1).array();    
+  }
 };
 
 /** Turns the second-order ODE into a system of first-order ODEs as follows:
@@ -156,8 +180,7 @@ public:
  * @returns a vector of the derivative of \f$ y \f$
  */
 template <typename Mat>
-Eigen::Matrix<std::complex<double>, 1, 2>
-RKSolver::f(double t, const Mat &y) {
+Eigen::Matrix<std::complex<double>, 1, 2> RKSolver::f(double t, const Mat &y) {
 
   //    std::cout << "Are we interpolating? " << de_sys_->is_interpolated_ <<
   //    std::endl;
@@ -185,36 +208,9 @@ RKSolver::dense_point(std::complex<double> x, std::complex<double> dx,
 
 /** Calculated dense output at a given set of points during a step after a
  * successful Runge-Kutta type step.
+ * @param[in, out] doxs
+ * @param[in, out] dodxs
  */
-void RKSolver::dense_step(double t0, double h0, std::complex<double> y0,
-                          std::complex<double> dy0,
-                          const std::vector<double> &dots,
-                          std::vector<std::complex<double>> &doxs,
-                          std::vector<std::complex<double>> &dodxs) {
-  const auto docount = dots.size();
-  Eigen::Matrix<double, 4, -1> R_dense(4, docount);
-  int colcount = 0;
-  double sig, sig2, sig3, sig4;
-  for (auto it = dots.begin(); it != dots.end(); it++) {
-    // Transform intermediate points to be in (-1,1):
-    sig = (*it - t0) / h0;
-    sig2 = sig * sig;
-    sig3 = sig2 * sig;
-    sig4 = sig3 * sig;
-    R_dense.col(colcount) << sig, sig2, sig3, sig4;
-    colcount += 1;
-  }
-  // Q_dense is used once and could be inline on the line for Y_dense
-  Eigen::Matrix<std::complex<double>, 2, 4> Q_dense =
-      k_dense * P_dense;
-  Eigen::Matrix<std::complex<double>, 2, -1> Y_dense = Q_dense * R_dense;
-  auto it = doxs.begin();
-  auto dit = dodxs.begin();
-  for (std::size_t j = 0; j < docount; j++, it++, dit++) {
-    *it = y0 + Y_dense.row(0)(j);
-    *dit = dy0 + Y_dense.row(1)(j);
-  }
-};
 
 /** Computes a single Runge-Kutta type step, and returns the solution and its
  * local error estimate.
@@ -231,7 +227,8 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   y5 = y4;
   // TODO: resizing of ws5, gs5, insertion
   Eigen::Matrix<std::complex<double>, 2, 4> k4;
-  Eigen::Matrix<std::complex<double>, 2, 2> result = Eigen::Matrix<std::complex<double>, 2, 2>::Zero();
+  Eigen::Matrix<std::complex<double>, 2, 2> result =
+      Eigen::Matrix<std::complex<double>, 2, 2>::Zero();
   //    std::cout << "Set up RK step" << std::endl;
   k5.col(0) = h * f(t0, y0);
   //    std::cout << "Asked for f" << std::endl;
@@ -264,8 +261,8 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   y4 += k4 * butcher_b4;
   result.col(1) = result.col(0) - y4;
   result.col(0) += y0;
-  //result << y5, delta;
-  // Add in missing w, g at t+h/2
+  // result << y5, delta;
+  //  Add in missing w, g at t+h/2
   ws5(4) = ws5(3);
   ws5(3) = ws5(2);
   gs5(4) = gs5(3);
@@ -279,7 +276,8 @@ RKSolver::step(std::complex<double> x0, std::complex<double> dx0, double t0,
   k_dense.col(6) = h * f(t0 + h, result.col(0));
 
   // Experimental continuous output
-  Eigen::Matrix<std::complex<double>, 1, 4> Q_dense = (k_dense * P_dense).row(0);
+  Eigen::Matrix<std::complex<double>, 1, 4> Q_dense =
+      (k_dense * P_dense).row(0);
   x_vdm(0) = x0;
   x_vdm.tail(6) << Q_dense(0), Q_dense(1), Q_dense(2), Q_dense(3), 0.0, 0.0;
 

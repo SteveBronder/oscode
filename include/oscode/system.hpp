@@ -58,7 +58,7 @@ de_system::de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
   if (check_grid) {
     int w_is_fine = Winterp_.check_grid_fineness(size);
     int g_is_fine = Ginterp_.check_grid_fineness(size);
-    if (w_is_fine  && g_is_fine)
+    if (w_is_fine && g_is_fine)
       grid_fine_enough = 1;
     else
       grid_fine_enough = 0;
