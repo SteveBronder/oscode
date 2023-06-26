@@ -88,12 +88,22 @@ public:
    *
    */
   Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+<<<<<<< HEAD
            double t_i, double t_f, int o = 3, double h_0 = 1,
            const char *full_output = "")
       : de_sys_(&de_sys), t_(t_i), tf_(t_f), h0_(h_0), x_(x0), dx_(dx0),
         order_(o), fo(full_output), wkbsolver_(std::unique_ptr<WKBSolver>(
                                         set_wkb_solver_order(order_, de_sys_))),
         rksolver_(RKSolver(*de_sys_)) {
+=======
+           double t_i, double t_f, int o = 3, double r_tol = 1e-4,
+           double a_tol = 0.0, double h_0 = 1, const char *full_output = "")
+      : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol), atol(a_tol), h0(h_0),
+        x(x0), dx(dx0), order(o), fo(full_output),
+        wkbsolver(
+            std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))),
+        rksolver(RKSolver(*de_sys_)) {
+>>>>>>> refs/remotes/origin/fixes/cleanup
 
     // Determine direction of integration, fend_>0 and integration ends when
     // it crosses zero
@@ -123,12 +133,21 @@ public:
 
     // No dense output desired if this constructor was called, so only output
     // answer at t_i and t_f
+<<<<<<< HEAD
     dotimes_.push_back(t_i);
     dotimes_.push_back(t_f);
     dosol_.push_back(x0);
     dodsol_.push_back(dx0);
     // dot_it = dotimes_.end();
     dense_output_ = false;
+=======
+    dotimes.push_back(t_i);
+    dotimes.push_back(t_f);
+    dosol.push_back(x0);
+    dodsol.push_back(dx0);
+    // dot_it = dotimes.end();
+    dense_output = false;
+>>>>>>> refs/remotes/origin/fixes/cleanup
   }
   /** Constructor for when dense output was requested. Sets up solution of the
    * ODE.
@@ -150,12 +169,23 @@ public:
    */
   template <typename X = double>
   Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+<<<<<<< HEAD
            double t_i, double t_f, const X &do_times, int o = 3, double h_0 = 1,
            const char *full_output = "")
       : de_sys_(&de_sys), t_(t_i), tf_(t_f), h0_(h_0), x_(x0), dx_(dx0),
         order_(o), fo(full_output), wkbsolver_(std::unique_ptr<WKBSolver>(
                                         set_wkb_solver_order(order_, de_sys_))),
         rksolver_(RKSolver(*de_sys_)) {
+=======
+           double t_i, double t_f, const X &do_times, int o = 3,
+           double r_tol = 1e-4, double a_tol = 0.0, double h_0 = 1,
+           const char *full_output = "")
+      : de_sys_(&de_sys), t(t_i), tf(t_f), rtol(r_tol), atol(a_tol), h0(h_0),
+        x(x0), dx(dx0), order(o), fo(full_output),
+        wkbsolver(
+            std::unique_ptr<WKBSolver>(set_wkb_solver_order(order, de_sys_))),
+        rksolver(RKSolver(*de_sys_)) {
+>>>>>>> refs/remotes/origin/fixes/cleanup
 
     // Set parameters for solver
     // Determine direction of integration, fend_>0 and integration ends when
@@ -169,11 +199,19 @@ public:
       // sign is false by default
     } else if ((t_ <= tf_) && h0_ > 0) {
       // forward
+<<<<<<< HEAD
       fend_ = tf_ - t_;
       fnext_ = fend_;
       de_sys_->Winterp_.sign_ = de_sys_->is_interpolated_;
       de_sys_->Ginterp_.sign_ = de_sys_->is_interpolated_;
       sign_ = !de_sys_->is_interpolated_;
+=======
+      fend = tf - t;
+      fnext = fend;
+      de_sys_->Winterp_.sign_ = de_sys_->is_interpolated_;
+      de_sys_->Ginterp_.sign_ = de_sys_->is_interpolated_;
+      sign = !de_sys_->is_interpolated_;
+>>>>>>> refs/remotes/origin/fixes/cleanup
     } else {
       throw std::logic_error(
           "Direction of integration in conflict with direction of initial "
@@ -199,8 +237,13 @@ public:
       std::sort(dotimes_.begin(), dotimes_.end());
     }
 
+<<<<<<< HEAD
     // dot_it = dotimes_.begin();
     dense_output_ = true;
+=======
+    // dot_it = dotimes.begin();
+    dense_output = true;
+>>>>>>> refs/remotes/origin/fixes/cleanup
   }
   /** \brief Function to solve the ODE \f$ \ddot{x} + 2\gamma(t)\dot{x} +
    * \omega^2(t)x = 0 \f$ for \f$ x(t), \frac{dx}{dt} \f$.
@@ -233,12 +276,20 @@ public:
     std::vector<double> inner_dotimes;
     std::vector<std::complex<double>> inner_dosols, inner_dodsols;
     Eigen::Matrix<std::complex<double>, 1, 2> y_dense_rk;
-    std::complex<double> x_dense_rk, dx_dense_rk;
     // Experimental continuous solution, vandermonde representation
     Eigen::Matrix<std::complex<double>, 7, 1> xvdm;
+<<<<<<< HEAD
     std::size_t do_solve_count = 0;
     std::size_t do_dodsol_count = 0;
     while (fend_ > 0) {
+=======
+    // NOTE: If any of these are resized and cause a memory allocation the
+    // program will segfault since the iterator will be invalidated.
+    auto it_dosol = dosol.begin();
+    auto it_dodsol = dodsol.begin();
+    auto dot_it = dotimes.begin();
+    while (fend > 0) {
+>>>>>>> refs/remotes/origin/fixes/cleanup
       // Check if we are reaching the end of integration
       if (fnext_ < 0) {
         h = tf_ - t_;
@@ -249,13 +300,22 @@ public:
       while (true) {
         // RK step
         Eigen::Matrix<std::complex<double>, 2, 2> rkstep =
+<<<<<<< HEAD
             rksolver_.step(x_, dx_, t_, h);
+=======
+            rksolver.step(x, dx, t, h);
+>>>>>>> refs/remotes/origin/fixes/cleanup
         auto rkx = rkstep.col(0);
         auto rkerr = rkstep.col(1);
         // WKB step
         Eigen::Matrix<std::complex<double>, 3, 2> wkbstep =
+<<<<<<< HEAD
             wkbsolver_->step(dense_output_, x_, dx_, t_, h, rksolver_.ws,
                              rksolver_.gs, rksolver_.ws5, rksolver_.gs5);
+=======
+            wkbsolver->step(dense_output, x, dx, t, h, rksolver.ws, rksolver.gs,
+                            rksolver.ws5, rksolver.gs5);
+>>>>>>> refs/remotes/origin/fixes/cleanup
         auto wkbx = wkbstep.row(0);
         auto wkberr = wkbstep.row(2);
         truncerr = wkbstep.row(1);
@@ -265,6 +325,7 @@ public:
         truncerr(1) = std::max(1e-10, abs(truncerr(1)));
         // dominant error calculation
         // Error scale measures
+<<<<<<< HEAD
         const auto tols = rtol + atol;
         errmeasure_rk.array() =
             rkerr.array().abs() / (rkx.array().abs() * tols);
@@ -275,6 +336,23 @@ public:
         double rkdelta = std::max(1e-10, errmeasure_rk.maxCoeff(&maxindex_rk));
         const bool check_wkbdelta =
             std::isnan(errmeasure_wkb.reshaped().array().maxCoeff()) ||
+=======
+        errmeasure_rk(0) =
+            std::abs(rkerr(0)) / (std::abs(rkx(0)) * rtol + atol);
+        errmeasure_rk(1) =
+            std::abs(rkerr(1)) / (std::abs(rkx(1)) * rtol + atol);
+        errmeasure_wkb(0) =
+            std::abs(truncerr(0)) / (std::abs(wkbx(0)) * rtol + atol),
+        errmeasure_wkb(1) =
+            std::abs(truncerr(1)) / (std::abs(wkbx(1)) * rtol + atol),
+        errmeasure_wkb(2) =
+            std::abs(wkberr(0)) / (std::abs(wkbx(0)) * rtol + atol),
+        errmeasure_wkb(3) =
+            std::abs(wkberr(1)) / (std::abs(wkbx(1)) * rtol + atol);
+        double rkdelta = std::max(1e-10, errmeasure_rk.maxCoeff(&maxindex_rk));
+        bool check_wkbdelta =
+            std::isnan(errmeasure_wkb.maxCoeff()) ||
+>>>>>>> refs/remotes/origin/fixes/cleanup
             std::isinf(std::real(wkbx(0))) || std::isnan(std::real(wkbx(0))) ||
             std::isinf(std::imag(wkbx(0))) || std::isnan(std::imag(wkbx(0))) ||
             std::isinf(std::real(wkbx(1))) || std::isnan(std::real(wkbx(1))) ||
@@ -282,8 +360,12 @@ public:
         double wkbdelta =
             check_wkbdelta
                 ? std::numeric_limits<double>::infinity()
+<<<<<<< HEAD
                 : std::max(1e-10, errmeasure_wkb.reshaped().array().maxCoeff(
                                       &maxindex_wkb));
+=======
+                : std::max(1e-10, errmeasure_wkb.maxCoeff(&maxindex_wkb));
+>>>>>>> refs/remotes/origin/fixes/cleanup
         // predict next stepsize
         const double hrk = h * std::pow((1.0 / rkdelta), 1.0 / nrk);
         const double hwkb =
@@ -291,6 +373,7 @@ public:
             std::pow(1.0 / wkbdelta, 1.0 / (maxindex_wkb <= 1 ? nwkb1 : nwkb2));
         // choose step with larger predicted stepsize
         const bool wkb = std::abs(hwkb) >= std::abs(hrk);
+<<<<<<< HEAD
         if (wkb) {
           std::complex<double> xnext = wkbx(0);
           std::complex<double> dxnext = wkbx(1);
@@ -309,6 +392,38 @@ public:
                   << "Warning: the step acceptance ratio is below 5%, the "
                      "solver may take a while to converge."
                   << std::endl;
+=======
+        std::complex<double> xnext = wkb ? wkbx(0) : rkx(0);
+        std::complex<double> dxnext = wkb ? wkbx(1) : rkx(1);
+        // if wkb step chosen, ignore truncation error in
+        // stepsize-increase
+        wkbdelta =
+            wkb ? std::max(1e-10, errmeasure_wkb.tail(2).maxCoeff()) : wkbdelta;
+        double hnext = wkb ? h * std::pow(1.0 / wkbdelta, 1.0 / nwkb2) : hrk;
+        totsteps += 1;
+        // Checking for too many steps and low acceptance ratio:
+        if (totsteps % 5000) {
+          std::cerr << "Warning: the solver took " << totsteps
+                    << " steps, and may take a while to converge." << std::endl;
+          if (ssteps / totsteps < 0.05) {
+            std::cerr << "Warning: the step acceptance ratio is below 5%, the "
+                         "solver may take a while to converge."
+                      << std::endl;
+          }
+        }
+
+        // check if chosen step was successful
+        if (std::abs(hnext) >= std::abs(h)) {
+          if (OSCODE_DEBUG) {
+            std::cout << "All dense output points: " << std::endl;
+          }
+          if (dense_output) {
+            //                    std::cout << *dot_it << std::endl;
+            for (; (*dot_it - t >= 0 && tnext - *dot_it >= 0) ||
+                   (*dot_it - t <= 0 && tnext - *dot_it <= 0);
+                 ++dot_it) {
+              inner_dotimes.push_back(*dot_it);
+>>>>>>> refs/remotes/origin/fixes/cleanup
             }
           }
 
@@ -333,12 +448,25 @@ public:
                   std::cout
                       << "Attempting " << inner_dosols.size()
                       << " dense output points after successful WKB step from "
+<<<<<<< HEAD
                       << t_ << " to " << t_ + h << std::endl;
+=======
+                      << t << " to " << t + h << std::endl;
+                }
+                wkbsolver->dense_step(t, h, inner_dotimes, inner_dosols,
+                                      inner_dodsols);
+              } else {
+                // Dense output after successful RK step
+                for (auto it = inner_dotimes.begin(); it != inner_dotimes.end();
+                     it++) {
+                  rksolver.dense_step(inner_dosols, inner_dodsols, t, h, x, dx, inner_dotimes);
+>>>>>>> refs/remotes/origin/fixes/cleanup
                 }
                 wkbsolver_->dense_step(t_, h, inner_dotimes, inner_dosols,
                                        inner_dodsols);
               }
             }
+<<<<<<< HEAD
             for (auto inner_it = inner_dosols.begin(),
                       inner_dit = inner_dodsols.begin(),
                       it_dosol = dosol_.begin() + do_dodsol_count,
@@ -353,6 +481,20 @@ public:
             inner_dotimes.clear();
             inner_dosols.clear();
             inner_dodsols.clear();
+=======
+          }
+          for (auto inner_it = inner_dosols.begin(),
+                    inner_dit = inner_dodsols.begin();
+               inner_it != inner_dosols.end() && it_dosol != dosol.end() &&
+               inner_dit != inner_dodsols.end() && it_dodsol != dodsol.end();
+               it_dodsol++, it_dosol++, inner_it++, inner_dit++) {
+            *it_dosol = *inner_it;
+            *it_dodsol = *inner_dit;
+          }
+          inner_dotimes.clear();
+          inner_dosols.clear();
+          inner_dodsols.clear();
+>>>>>>> refs/remotes/origin/fixes/cleanup
 
             // record type of step
             wkbsteps_++;
@@ -479,10 +621,17 @@ public:
     // If integrating backwards, reverse dense output (because it will have been
     // reversed at the start)
     if ((de_sys_->is_interpolated_ && !de_sys_->Winterp_.sign_) ||
+<<<<<<< HEAD
         (!de_sys_->is_interpolated_ && !sign_)) {
       std::reverse(dotimes_.begin(), dotimes_.end());
       std::reverse(dosol_.begin(), dosol_.end());
       std::reverse(dodsol_.begin(), dodsol_.end());
+=======
+        (!de_sys_->is_interpolated_ && !sign)) {
+      std::reverse(dotimes.begin(), dotimes.end());
+      std::reverse(dosol.begin(), dosol.end());
+      std::reverse(dodsol.begin(), dodsol.end());
+>>>>>>> refs/remotes/origin/fixes/cleanup
     }
 
     // Write output to file if prompted
