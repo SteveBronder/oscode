@@ -86,7 +86,9 @@ int main(){
 
     /** Create differential equation "system" */
     /** Method 1: Give frequency and damping term as functions */
-    de_system sys(&w, &g);
+    auto ww = [](double t){return w(t);};
+    auto gg = [](double t){return g(t);};
+    de_system<delctype(ww), decltype(gg)> sys(std::move(ww), std::move(gg));
 
     /** Method 2: Give frequency and damping term as std::vectors */
     /** 
@@ -146,7 +148,7 @@ int main(){
     */
 
     /** Solve the ODE */    
-    Solution solution(sys, x0, dx0, ti, tf);
+    Solution<decltype(ww), decltype(gg)> solution(sys, x0, dx0, ti, tf);
     solution.solve();
 
     /** Extract the solution and the types of steps taken by oscode */

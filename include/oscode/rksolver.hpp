@@ -17,10 +17,11 @@
  * Physical Review Research, vol. 2, no. 1, 2020,
  * doi:10.1103/physrevresearch.2.013030.
  */
+template <typename WFunc, typename GFunc>
 class RKSolver {
 public:
   /** Defines the ODE */
-  de_system *de_sys_;
+  de_system<WFunc, GFunc> *de_sys_;
   // grid of ws, gs_
   /** 6 values of the frequency term per step, evaluated at the nodes of 6th
    * order Gauss-Lobatto quadrature
@@ -55,8 +56,6 @@ public:
 
 private:
   // Frequency and friction term
-  std::function<std::complex<double>(double)> w_;
-  std::function<std::complex<double>(double)> g_;
 
   // Butcher tablaus
   /* clang-format off */
@@ -93,7 +92,7 @@ public:
   std::tuple<std::function<std::complex<double>(double)>,
              std::function<std::complex<double>(double)>>
       wi_gi_funcs;
-  auto setup_wi_gi_funcs(de_system *de_sys) {
+  auto setup_wi_gi_funcs(de_system<WFunc, GFunc> *de_sys) {
     std::tuple<std::function<std::complex<double>(double)>,
                std::function<std::complex<double>(double)>>
         funcs;
@@ -133,8 +132,6 @@ public:
    */
   RKSolver(de_system &de_sys)
       : de_sys_(&de_sys),
-        w_(!de_sys_->is_interpolated_ ? de_sys_->w_ : nullptr),
-        g_(!de_sys_->is_interpolated_ ? de_sys_->g_ : nullptr),
         wi_gi_funcs(setup_wi_gi_funcs(de_sys_)) {}
 
 /** Computes a single Runge-Kutta type step, and returns the solution and its
