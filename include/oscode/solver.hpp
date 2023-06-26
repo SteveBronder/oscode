@@ -188,7 +188,7 @@ public:
     dosol_.resize(dosize);
     dodsol_.resize(dosize);
 
-    // Copy dense output points to list
+    // Copy dense output points to internal
     dotimes_ = do_times;
 
     // Reverse if necessary
