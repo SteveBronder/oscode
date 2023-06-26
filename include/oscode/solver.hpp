@@ -253,8 +253,8 @@ public:
         auto rkerr = rkstep.col(1);
         // WKB step
         Eigen::Matrix<std::complex<double>, 3, 2> wkbstep =
-            wkbsolver_->step(dense_output_, x_, dx_, t_, h, rksolver_.ws,
-                             rksolver_.gs, rksolver_.ws5, rksolver_.gs5);
+            wkbsolver_->step(dense_output_, x_, dx_, t_, h, rksolver_.ws_,
+                             rksolver_.gs_, rksolver_.ws5_, rksolver_.gs5_);
         auto wkbx = wkbstep.row(0);
         auto wkberr = wkbstep.row(2);
         truncerr = wkbstep.row(1);
@@ -448,7 +448,7 @@ public:
 
             // record type of step
             wkbs_.push_back(false);
-            xvdm = rksolver_.x_vdm;
+            xvdm = rksolver_.x_vdm_;
             sol_.push_back(xnext);
             dsol_.push_back(dxnext);
             sol_vdm_.push_back(xvdm);
