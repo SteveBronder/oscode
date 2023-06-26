@@ -140,26 +140,26 @@ static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args, PyObject *kw
     std::vector<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
 
     if(t_evalobj!=NULL){
-        Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,rtol,atol,h0,full_output);
-        solution.solve();
-        x_eval = solution.dosol;
-        dx_eval = solution.dodsol;
-        sol = solution.sol;
-        dsol = solution.dsol;
-        times = solution.times;
-        wkbs = solution.wkbs;
-        cts_rep = solution.sol_vdm;
+        Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,h0,full_output);
+        solution.solve(rtol, atol);
+        x_eval = solution.dosol_;
+        dx_eval = solution.dodsol_;
+        sol = solution.sol_;
+        dsol = solution.dsol_;
+        times = solution.times_;
+        wkbs = solution.wkbs_;
+        cts_rep = solution.sol_vdm_;
     }
     else{ 
-        Solution solution(sys,x0,dx0,ti,tf,order,rtol,atol,h0,full_output);
-        solution.solve();
-        x_eval = solution.dosol;
-        dx_eval = solution.dodsol;
-        sol = solution.sol;
-        dsol = solution.dsol;
-        times = solution.times;
-        wkbs = solution.wkbs;
-        cts_rep = solution.sol_vdm;
+        Solution solution(sys,x0,dx0,ti,tf,order,h0,full_output);
+        solution.solve(rtol, atol);
+        x_eval = solution.dosol_;
+        dx_eval = solution.dodsol_;
+        sol = solution.sol_;
+        dsol = solution.dsol_;
+        times = solution.times_;
+        wkbs = solution.wkbs_;
+        cts_rep = solution.sol_vdm_;
     }
     // Build output values
     int Ndense = x_eval.size();
@@ -352,26 +352,26 @@ suitable independent variable.",1);
     std::vector<Eigen::Matrix<std::complex<double>,7,1>> cts_rep;
 
     if(t_evalobj!=NULL){
-        Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,rtol,atol,h0,full_output);
-        solution.solve();
-        x_eval = solution.dosol;
-        dx_eval = solution.dodsol;
-        sol = solution.sol;
-        dsol = solution.dsol;
-        times = solution.times;
-        wkbs = solution.wkbs;
-        cts_rep = solution.sol_vdm;
+        Solution solution(sys,x0,dx0,ti,tf,t_evallist,order,h0,full_output);
+        solution.solve(rtol, atol);
+        x_eval = solution.dosol_;
+        dx_eval = solution.dodsol_;
+        sol = solution.sol_;
+        dsol = solution.dsol_;
+        times = solution.times_;
+        wkbs = solution.wkbs_;
+        cts_rep = solution.sol_vdm_;
     }
     else{ 
-        Solution solution(sys,x0,dx0,ti,tf,order,rtol,atol,h0,full_output);
-        solution.solve();
-        x_eval = solution.dosol;
-        dx_eval = solution.dodsol;
-        sol = solution.sol;
-        dsol = solution.dsol;
-        times = solution.times;
-        wkbs = solution.wkbs;
-        cts_rep = solution.sol_vdm;
+        Solution solution(sys,x0,dx0,ti,tf,order, h0,full_output);
+        solution.solve(rtol, atol);
+        x_eval = solution.dosol_;
+        dx_eval = solution.dodsol_;
+        sol = solution.sol_;
+        dsol = solution.dsol_;
+        times = solution.times_;
+        wkbs = solution.wkbs_;
+        cts_rep = solution.sol_vdm_;
     }
     // Build output values
     int Ndense = x_eval.size();
