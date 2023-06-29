@@ -8,7 +8,7 @@ env/*
 .eggs/*
 .vscode/*
 build/*
-_pyoscode.cpython-*.so
+_pyoscode.cpython-*
 pyoscode.egg-info/*
 lib/*
 lib64/*
