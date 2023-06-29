@@ -176,7 +176,7 @@ public:
   Eigen::Matrix<std::complex<double>, 7, 1> x_vdm;
   // constructor
   WKBSolver(){};
-  WKBSolver(int order) : order_(order){};
+  WKBSolver(de_system &de_sys, int order) : order_(order){};
   virtual ~WKBSolver() {}
   Eigen::Matrix<std::complex<double>, 3, 2>
   step(bool dense_output, std::complex<double> x0, std::complex<double> dx0,
@@ -665,7 +665,7 @@ private:
 
 public:
   WKBSolver1(){};
-  WKBSolver1(int order) : WKBSolver(order){};
+  WKBSolver1(de_system &de_sys, int order) : WKBSolver(de_sys, order){};
 };
 
 //////////////////////////////////
@@ -761,7 +761,7 @@ private:
 
 public:
   WKBSolver2(){};
-  WKBSolver2(int order) : WKBSolver(order) {}
+  WKBSolver2(de_system &de_sys, int order) : WKBSolver(de_sys, order) {}
 };
 
 //////////////////////////////////
@@ -894,5 +894,5 @@ private:
 
 public:
   WKBSolver3() {}
-  WKBSolver3(int order) : WKBSolver(order) {}
+  WKBSolver3(de_system &de_sys, int order) : WKBSolver(de_sys, order) {}
 };

@@ -2,19 +2,41 @@
 #include <oscode/interpolator.hpp>
 #include <vector>
 /** */
-template <typename WFunc, typename GFunc>
 class de_system {
 private:
   int even_;
 
 public:
+  template <typename X, typename Y, typename Z, typename X_it>
+  de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool isglogw = false,
+            bool islogg = false, int even = 0, int check_grid = 0);
+  de_system(std::complex<double> (*)(double, void *),
+            std::complex<double> (*)(double, void *), void *);
+  de_system(std::complex<double> (*)(double), std::complex<double> (*)(double));
+  de_system();
+  std::function<std::complex<double>(double)> w_;
+  std::function<std::complex<double>(double)> g_;
+  LinearInterpolator<> Winterp_;
+  LinearInterpolator<> Ginterp_;
+  bool islogg_, islogw_;
+  bool grid_fine_enough = 1;
+  bool is_interpolated_;
+};
+
+/** Default contructor */
+de_system::de_system() {}
+
 /** Constructor for the case of the user having defined the frequency and
  * damping terms as sequences
  */
-  template <typename X, typename Y, typename Z, typename X_it>
-  de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool isglogw = false,
-            bool islogg = false, int even = 0, int check_grid = 0) : even_(even), is_interpolated_(true),
-            islogg_(islogg), islogw_(islogw) {
+template <typename X, typename Y, typename Z, typename X_it>
+de_system::de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
+                     bool islogg, int even, int check_grid) {
+
+  is_interpolated_ = 1;
+  even_ = even;
+  islogg_ = islogg;
+  islogw_ = islogw;
 
   /** Set up interpolation on the supplied frequency and damping arrays */
   LinearInterpolator<X, Y, X_it> winterp(ts, ws, even_);
@@ -59,28 +81,25 @@ public:
                    std::placeholders::_1);
 }
 
-  /** Constructor for the case when the frequency and damping terms have been
-   * defined as functions
-   */
-  template <typename WWFunc, typename GGFunc> 
-  de_system(WWFunc&& W, GGFunc&& G) : is_interpolated_(false), w_(std::forward<WWFunc>(W)), g_(std::forward<GGFunc>(G)) {}
+/** Constructor for the case when the frequency and damping terms have been
+ * defined as functions
+ */
+de_system::de_system(std::complex<double> (*W)(double, void *),
+                     std::complex<double> (*G)(double, void *), void *p) {
 
+  is_interpolated_ = 0;
+  w_ = [W, p](double x) { return W(x, p); };
+  g_ = [G, p](double x) { return G(x, p); };
 };
-
-
-  WFunc w_;
-  GFunc g_;
-  LinearInterpolator<> Winterp_;
-  LinearInterpolator<> Ginterp_;
-  bool islogg_, islogw_;
-  bool grid_fine_enough = 1;
-  bool is_interpolated_;
-};
-
-
-
 
 /** Constructor for the case when the frequency and damping terms have been
  * defined as functions (and there are no additional parameters that the
  * function might need)
  */
+de_system::de_system(std::complex<double> (*W)(double),
+                     std::complex<double> (*G)(double)) {
+
+  is_interpolated_ = 0;
+  w_ = W;
+  g_ = G;
+};
