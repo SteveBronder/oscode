@@ -3,6 +3,7 @@
 #include <cmath>
 #include <complex>
 #include <iterator>
+#include <algorithm>
 #include <vector>
 
 template <typename X = double *, typename Y = std::complex<double> *,

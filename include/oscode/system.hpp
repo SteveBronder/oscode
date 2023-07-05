@@ -1,6 +1,8 @@
 #pragma once
 #include <oscode/interpolator.hpp>
+#include <functional>
 #include <vector>
+
 /** */
 class de_system {
 private:
