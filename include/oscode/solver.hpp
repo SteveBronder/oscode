@@ -15,10 +15,10 @@
 #include <vector>
 
 /** A class to store all information related to a numerical solution run.  */
-class Solution {
+template <typename Sys> class Solution {
 private:
   /** A \a de_system object to carry information about the ODE. */
-  de_system *de_sys_;
+  Sys *de_sys_;
   double t_, tf_, h0_;
   std::complex<double> x_, dx_;
   int order_;
@@ -27,7 +27,7 @@ private:
 
 public:
   /** Object to call RK steps */
-  RKSolver rksolver_;
+  RKSolver<Sys> rksolver_;
 
   /** Successful, total attempted, and successful WKB steps the solver took,
    * respectively  */
@@ -58,16 +58,16 @@ private:
   bool sign_{false};
   /** whether to produce dense output */
   bool dense_output_{false};
-  WKBSolver *set_wkb_solver_order(int order, de_system *&desys) {
+  WKBSolver *set_wkb_solver_order(int order, Sys *&desys) {
     switch (order) {
     case 1:
-      return new WKBSolver1(*de_sys_, order);
+      return new WKBSolver1(order);
     case 2:
-      return new WKBSolver2(*de_sys_, order);
+      return new WKBSolver2(order);
     case 3:
-      return new WKBSolver3(*de_sys_, order);
+      return new WKBSolver3(order);
     };
-    return new WKBSolver3(*de_sys_, order);
+    return new WKBSolver3(order);
   }
 
 public:
@@ -87,7 +87,7 @@ public:
    * @param[in] full_output file name to write results to
    *
    */
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+  Solution(Sys &de_sys, std::complex<double> x0, std::complex<double> dx0,
            double t_i, double t_f, int o = 3, double h_0 = 1,
            const char *full_output = "")
       : de_sys_(&de_sys), t_(t_i), tf_(t_f), h0_(h_0), x_(x0), dx_(dx0),
@@ -149,7 +149,7 @@ public:
    *
    */
   template <typename X = double>
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
+  Solution(Sys &de_sys, std::complex<double> x0, std::complex<double> dx0,
            double t_i, double t_f, const X &do_times, int o = 3, double h_0 = 1,
            const char *full_output = "")
       : de_sys_(&de_sys), t_(t_i), tf_(t_f), h0_(h_0), x_(x0), dx_(dx0),

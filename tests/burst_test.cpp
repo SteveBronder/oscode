@@ -64,7 +64,7 @@ TEST(SolverTest, SolveBurst) {
 
     /** Solve the ODE */    
     Solution solution(sys, x0, dx0, ti, tf);
-    solution.solve();
+    solution.solve(1e-4, 0.0);
     EXPECT_TRUE(true);
 }
 

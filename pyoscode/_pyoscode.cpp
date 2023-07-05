@@ -28,85 +28,105 @@ PyMODINIT_FUNC init_pyoscode(void) {
 static PyObject *w_callback = NULL;
 static PyObject *g_callback = NULL;
 
-static std::complex<double> wfun(double t) {
-
-  std::complex<double> result = 0;
-  PyObject *arglist = Py_BuildValue("(d)", t);
-  PyObject *py_result = PyObject_CallObject(w_callback, arglist);
-  Py_DECREF(arglist);
-  // Check whether Python w(t) returned an exception
-  if (py_result == NULL)
-    return std::complex<double>(NAN, NAN);
-  // Check if return value was the correct type (complex)
-  if (PyComplex_Check(py_result) || PyFloat_Check(py_result)) {
-    result = std::complex<double>(PyComplex_RealAsDouble(py_result),
-                                  PyComplex_ImagAsDouble(py_result));
+struct WFunctor
+    : public BaseInterpolator<double *, std::complex<double> *, double *> {
+  std::complex<double> operator()(double t) {
+    std::complex<double> result = 0;
+    PyObject *arglist = Py_BuildValue("(d)", t);
+    PyObject *py_result = PyObject_CallObject(w_callback, arglist);
+    Py_DECREF(arglist);
+    // Check whether Python w(t) returned an exception
+    if (py_result == NULL)
+      return std::complex<double>(NAN, NAN);
+    // Check if return value was the correct type (complex)
+    if (PyComplex_Check(py_result) || PyFloat_Check(py_result)) {
+      result = std::complex<double>(PyComplex_RealAsDouble(py_result),
+                                    PyComplex_ImagAsDouble(py_result));
+    }
+    Py_DECREF(py_result);
+    return result;
   }
-  Py_DECREF(py_result);
-  return result;
-}
+};
 
-static std::complex<double> gfun(double t) {
+struct GFunctor
+    : public BaseInterpolator<double *, std::complex<double> *, double *> {
 
-  std::complex<double> result = 0;
-  PyObject *arglist = Py_BuildValue("(d)", t);
-  PyObject *py_result = PyObject_CallObject(g_callback, arglist);
-  Py_DECREF(arglist);
-  // Check whether Python w(t) returned an exception
-  if (py_result == NULL)
-    return std::complex<double>(NAN, NAN);
-  // Check if return value was the correct type (complex)
-  if (PyComplex_Check(py_result) || PyFloat_Check(py_result))
-    result = std::complex<double>(PyComplex_RealAsDouble(py_result),
-                                  PyComplex_ImagAsDouble(py_result));
-  Py_DECREF(py_result);
-  return result;
-}
+  std::complex<double> operator()(double t) {
+    std::complex<double> result = 0;
+    PyObject *arglist = Py_BuildValue("(d)", t);
+    PyObject *py_result = PyObject_CallObject(g_callback, arglist);
+    Py_DECREF(arglist);
+    // Check whether Python w(t) returned an exception
+    if (py_result == NULL)
+      return std::complex<double>(NAN, NAN);
+    // Check if return value was the correct type (complex)
+    if (PyComplex_Check(py_result) || PyFloat_Check(py_result))
+      result = std::complex<double>(PyComplex_RealAsDouble(py_result),
+                                    PyComplex_ImagAsDouble(py_result));
+    Py_DECREF(py_result);
+    return result;
+  }
+};
 
 struct PyListDeleter {
-  void operator()(PyObject* x) { Py_DECREF(x); }
+  void operator()(PyObject *x) { Py_DECREF(x); }
 };
 
 using pylist_ptr = std::unique_ptr<PyObject, PyListDeleter>;
-pylist_ptr to_pylist(const std::vector<double>& v) {
-    pylist_ptr pylist(PyList_New(v.size()));
-    for (size_t i = 0; i < v.size(); ++i) {
-        PyList_SetItem(pylist.get(), i, PyFloat_FromDouble(v[i]));
-    }
-    return pylist;
+pylist_ptr to_pylist(const std::vector<double> &v) {
+  pylist_ptr pylist(PyList_New(v.size()));
+  for (size_t i = 0; i < v.size(); ++i) {
+    PyList_SetItem(pylist.get(), i, PyFloat_FromDouble(v[i]));
+  }
+  return pylist;
 }
 
-pylist_ptr to_pylist(const std::vector<std::complex<double>>& v) {
-    pylist_ptr pylist(PyList_New(v.size()));
-    for (size_t i = 0; i < v.size(); ++i) {
-        Py_complex x_complex{std::real(v[i]), std::imag(v[i])};
-        PyList_SetItem(pylist.get(), i, Py_BuildValue("D", &x_complex));
-    }
-    return pylist;
+pylist_ptr to_pylist(const std::vector<std::complex<double>> &v) {
+  pylist_ptr pylist(PyList_New(v.size()));
+  for (size_t i = 0; i < v.size(); ++i) {
+    Py_complex x_complex{std::real(v[i]), std::imag(v[i])};
+    PyList_SetItem(pylist.get(), i, Py_BuildValue("D", &x_complex));
+  }
+  return pylist;
 }
 
-pylist_ptr to_pylist(const std::vector<bool>& v) {
-    pylist_ptr pylist(PyList_New(v.size()));
-    for (size_t i = 0; i < v.size(); ++i) {
-        const bool x = v[i];
-        PyList_SetItem(pylist.get(), i, Py_BuildValue("i", &x));
-    }
-    return pylist;
+pylist_ptr to_pylist(const std::vector<bool> &v) {
+  pylist_ptr pylist(PyList_New(v.size()));
+  for (size_t i = 0; i < v.size(); ++i) {
+    const bool x = v[i];
+    PyList_SetItem(pylist.get(), i, Py_BuildValue("i", &x));
+  }
+  return pylist;
 }
 
-pylist_ptr to_pylist(const std::vector<Eigen::Matrix<std::complex<double>, 7, 1>>& v) {
-    pylist_ptr pylist(PyList_New(v.size()));
-    for (std::size_t i = 0; i < v.size(); ++i) {
-        PyObject *pycts_rep_element = PyList_New(7);
-        for (std::size_t j = 0; j <= 6; j++) {
-            Py_complex coeff_complex{std::real(v[i](j)), std::imag(v[i](j))};
-            PyList_SetItem(pycts_rep_element, j, Py_BuildValue("D", &coeff_complex));
-        }
-        PyList_SetItem(pylist.get(), i, pycts_rep_element);
+pylist_ptr
+to_pylist(const std::vector<Eigen::Matrix<std::complex<double>, 7, 1>> &v) {
+  pylist_ptr pylist(PyList_New(v.size()));
+  for (std::size_t i = 0; i < v.size(); ++i) {
+    PyObject *pycts_rep_element = PyList_New(7);
+    for (std::size_t j = 0; j <= 6; j++) {
+      Py_complex coeff_complex{std::real(v[i](j)), std::imag(v[i](j))};
+      PyList_SetItem(pycts_rep_element, j, Py_BuildValue("D", &coeff_complex));
     }
-    return pylist;
+    PyList_SetItem(pylist.get(), i, pycts_rep_element);
+  }
+  return pylist;
 }
 
+template <typename Sol> PyObject *to_result_dict(Sol &&solution) {
+  // Build output values
+  auto pyx_eval = to_pylist(std::forward<Sol>(solution).dosol_);
+  auto pydx_eval = to_pylist(std::forward<Sol>(solution).dodsol_);
+  auto pysol = to_pylist(std::forward<Sol>(solution).sol_);
+  auto pydsol = to_pylist(std::forward<Sol>(solution).dsol_);
+  auto pytimes = to_pylist(std::forward<Sol>(solution).times_);
+  auto pywkbs = to_pylist(std::forward<Sol>(solution).wkbs_);
+  auto pycts_rep = to_pylist(std::forward<Sol>(solution).sol_vdm_);
+  return Py_BuildValue("{s:O,s:O,s:O,s:O,s:O,s:O,s:O}", "sol", pysol.get(),
+                       "dsol", pydsol.get(), "t", pytimes.get(), "types",
+                       pywkbs.get(), "x_eval", pyx_eval.get(), "dx_eval",
+                       pydx_eval.get(), "cts_rep", pycts_rep.get());
+}
 /* Function to run the solver when w, g are provided as functions */
 static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args,
                                     PyObject *kwargs) {
@@ -188,52 +208,18 @@ static PyObject *_pyoscode_solve_fn(PyObject *self, PyObject *args,
     PyErr_SetString(PyExc_TypeError, errormsg);
     return (PyObject *)NULL;
   }
-  de_system sys = de_system(&wfun, &gfun);
-  std::vector<std::complex<double>> sol, dsol;
-  std::vector<double> times;
-  std::vector<bool> wkbs;
-  std::vector<std::complex<double>> x_eval, dx_eval;
-  std::vector<Eigen::Matrix<std::complex<double>, 7, 1>> cts_rep;
-
   if (t_evalobj != NULL) {
+    de_system<WFunctor, GFunctor> sys(WFunctor{}, GFunctor{});
     Solution solution(sys, x0, dx0, ti, tf, t_evallist, order, h0, full_output);
     solution.solve(rtol, atol);
-    x_eval = solution.dosol_;
-    dx_eval = solution.dodsol_;
-    sol = solution.sol_;
-    dsol = solution.dsol_;
-    times = solution.times_;
-    wkbs = solution.wkbs_;
-    cts_rep = solution.sol_vdm_;
+    return to_result_dict(solution);
   } else {
+    de_system<WFunctor, GFunctor> sys(WFunctor{}, GFunctor{});
     Solution solution(sys, x0, dx0, ti, tf, order, h0, full_output);
     solution.solve(rtol, atol);
-    x_eval = solution.dosol_;
-    dx_eval = solution.dodsol_;
-    sol = solution.sol_;
-    dsol = solution.dsol_;
-    times = solution.times_;
-    wkbs = solution.wkbs_;
-    cts_rep = solution.sol_vdm_;
+    return to_result_dict(solution);
   }
-  // Build output values
-  auto pyx_eval = to_pylist(x_eval);
-  auto pydx_eval = to_pylist(dx_eval);
-  auto pycts_rep = to_pylist(cts_rep);
-  auto pytimes = to_pylist(times);
-  auto pysol = to_pylist(sol);
-  auto pydsol = to_pylist(dsol);
-  auto pywkbs = to_pylist(wkbs);;  
-  PyObject *retdict = Py_BuildValue("{s:O,s:O,s:O,s:O,s:O,s:O,s:O}", "sol", pysol.get(), "dsol",
-                          pydsol.get(), "t", pytimes.get(), "types", pywkbs.get(), "x_eval",
-                          pyx_eval.get(), "dx_eval", pydx_eval.get(), "cts_rep", pycts_rep.get());
-  // Clean up
-  // Py_DECREF(pycts_rep_element);
-  //    Py_DECREF(t_evalarray);
-  //    Py_DECREF(pyx_eval);
-  return retdict;
 }
-
 
 /* Function to run the solver when w, g are provided as arrays */
 static PyObject *_pyoscode_solve(PyObject *self, PyObject *args,
@@ -361,61 +347,104 @@ static PyObject *_pyoscode_solve(PyObject *self, PyObject *args,
   }
 
   // Call the C++ functions to construct system and solve
-  de_system sys =
-      de_system(ts, ws, gs, ts, tssize, islogw, islogg, even, check_grid);
-  if (sys.grid_fine_enough != 1) {
-    PyErr_WarnEx(PyExc_RuntimeWarning, "One or more of the arrays provided \
-(w, g, logw, logg) may not be fine enough to carry out linear \
-interpolation accurately. This may result in not traversing oscillatory \
-regions of the solution efficiently and numerical inaccuracies. Please \
-consider refining the sampling of the array(s) or switching to a more \
-suitable independent variable.",
-                 1);
-  }
-  std::vector<std::complex<double>> sol, dsol;
-  std::vector<double> times;
-  std::vector<bool> wkbs;
-  std::vector<std::complex<double>> x_eval, dx_eval;
-  std::vector<Eigen::Matrix<std::complex<double>, 7, 1>> cts_rep;
+  auto check_sys = [](auto &&sys) {
+    if (sys.grid_fine_enough != 1) {
+      PyErr_WarnEx(PyExc_RuntimeWarning, "One or more of the arrays provided \
+    (w, g, logw, logg) may not be fine enough to carry out linear \
+    interpolation accurately. This may result in not traversing oscillatory \
+    regions of the solution efficiently and numerical inaccuracies. Please \
+    consider refining the sampling of the array(s) or switching to a more \
+    suitable independent variable.",
+                   1);
+    }
+  };
+  /** Set up interpolation on the supplied frequency and damping arrays */
 
+  using linear_interp_t =
+      LinearInterpolator<double *, std::complex<double> *, double *>;
+  using loglinear_interp_t =
+      LogLinearInterpolator<double *, std::complex<double> *, double *>;
   if (t_evalobj != NULL) {
-    Solution solution(sys, x0, dx0, ti, tf, t_evallist, order, h0, full_output);
-    solution.solve(rtol, atol);
-    x_eval = solution.dosol_;
-    dx_eval = solution.dodsol_;
-    sol = solution.sol_;
-    dsol = solution.dsol_;
-    times = solution.times_;
-    wkbs = solution.wkbs_;
-    cts_rep = solution.sol_vdm_;
+    if (islogw && islogg) {
+      loglinear_interp_t winterp(ts, ws, even);
+      loglinear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<loglinear_interp_t, loglinear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, t_evallist, order, h0,
+                                  full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    } else if (islogw) {
+      loglinear_interp_t winterp(ts, ws, even);
+      linear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<loglinear_interp_t, linear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, t_evallist, order, h0,
+                                  full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+
+    } else if (islogg) {
+      linear_interp_t winterp(ts, ws, even);
+      loglinear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<linear_interp_t, loglinear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, t_evallist, order, h0,
+                                  full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    } else {
+      linear_interp_t winterp(ts, ws, even);
+      linear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<linear_interp_t, linear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, t_evallist, order, h0,
+                                  full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    }
   } else {
-    Solution solution(sys, x0, dx0, ti, tf, order, h0, full_output);
-    solution.solve(rtol, atol);
-    x_eval = solution.dosol_;
-    dx_eval = solution.dodsol_;
-    sol = solution.sol_;
-    dsol = solution.dsol_;
-    times = solution.times_;
-    wkbs = solution.wkbs_;
-    cts_rep = solution.sol_vdm_;
+    if (islogw && islogg) {
+      loglinear_interp_t winterp(ts, ws, even);
+      loglinear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<loglinear_interp_t, loglinear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, order, h0, full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    } else if (islogw) {
+      loglinear_interp_t winterp(ts, ws, even);
+      linear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<loglinear_interp_t, linear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, order, h0, full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+
+    } else if (islogg) {
+      linear_interp_t winterp(ts, ws, even);
+      loglinear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<linear_interp_t, loglinear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, order, h0, full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    } else {
+      linear_interp_t winterp(ts, ws, even);
+      linear_interp_t ginterp(ts, gs, even);
+      using de_sys_t = de_system<linear_interp_t, linear_interp_t>;
+      de_sys_t sys(ts, ws, gs, ts, tssize, winterp, ginterp, even, check_grid);
+      check_sys(sys);
+      Solution<de_sys_t> solution(sys, x0, dx0, ti, tf, order, h0, full_output);
+      solution.solve(rtol, atol);
+      return to_result_dict(solution);
+    }
   }
-  // Build output values
-  auto pyx_eval = to_pylist(x_eval);
-  auto pydx_eval = to_pylist(dx_eval);
-  auto pycts_rep = to_pylist(cts_rep);
-  auto pytimes = to_pylist(times);
-  auto pysol = to_pylist(sol);
-  auto pydsol = to_pylist(dsol);
-  auto pywkbs = to_pylist(wkbs);;  
-  PyObject *retdict = Py_BuildValue("{s:O,s:O,s:O,s:O,s:O,s:O,s:O}", "sol", pysol.get(), "dsol",
-                          pydsol.get(), "t", pytimes.get(), "types", pywkbs.get(), "x_eval",
-                          pyx_eval.get(), "dx_eval", pydx_eval.get(), "cts_rep", pycts_rep.get());
-  // Clean up
-  Py_DECREF(tsarray);
-  Py_DECREF(wsarray);
-  Py_DECREF(gsarray);
-  // Py_DECREF(pycts_rep_element);
-  //    Py_DECREF(t_evalarray);
-  //    Py_DECREF(pyx_eval);
-  return retdict;
 }
