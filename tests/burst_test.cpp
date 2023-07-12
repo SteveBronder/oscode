@@ -117,7 +117,7 @@ TEST(SolverTest, SolveBurstEvenFwd) {
   for (auto &t : time_comp_vec) {
     true_dsol_vec.push_back(dxburst(t));
   }
-  for (int i = 0; i < time_comp_vec.size(); ++i) {
+  for (std::size_t i = 0; i < time_comp_vec.size(); ++i) {
     EXPECT_NEAR((std::real(sol_vec[i]) - std::real(true_sol_vec[i])), 0.0f,
                 1e-2f);
     EXPECT_NEAR((std::imag(sol_vec[i]) - std::imag(true_sol_vec[i])), 0.0f,
@@ -170,7 +170,7 @@ TEST(SolverTest, SolveBurstEvenRev) {
   for (auto &t : time_comp_vec) {
     true_dsol_vec.push_back(dxburst(t));
   }
-  for (int i = 0; i < time_comp_vec.size(); ++i) {
+  for (std::size_t i = 0; i < time_comp_vec.size(); ++i) {
     EXPECT_NEAR((std::real(sol_vec[i]) - std::real(true_sol_vec[i])), 0.0f,
                 1e-3f)
         << "i = " << i << " sol = " << sol_vec[i]

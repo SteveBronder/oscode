@@ -7,30 +7,14 @@ private:
   int even_;
 
 public:
-  template <typename X, typename Y, typename Z, typename X_it>
-  de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool isglogw = false,
-            bool islogg = false, int even = 0, int check_grid = 0);
-  de_system(std::complex<double> (*)(double, void *),
-            std::complex<double> (*)(double, void *), void *);
-  de_system(std::complex<double> (*)(double), std::complex<double> (*)(double));
-  de_system();
-  std::function<std::complex<double>(double)> w;
-  std::function<std::complex<double>(double)> g;
-  LinearInterpolator<> Winterp;
-  LinearInterpolator<> Ginterp;
-  bool islogg_, islogw_;
-  bool grid_fine_enough = 1;
-  bool is_interpolated;
-};
-
 /** Default contructor */
-de_system::de_system() {}
+de_system() {}
 
 /** Constructor for the case of the user having defined the frequency and
  * damping terms as sequences
  */
 template <typename X, typename Y, typename Z, typename X_it>
-de_system::de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
+de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
                      bool islogg, int even, int check_grid) {
 
   is_interpolated = 1;
@@ -84,7 +68,7 @@ de_system::de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
 /** Constructor for the case when the frequency and damping terms have been
  * defined as functions
  */
-de_system::de_system(std::complex<double> (*W)(double, void *),
+de_system(std::complex<double> (*W)(double, void *),
                      std::complex<double> (*G)(double, void *), void *p) {
 
   is_interpolated = 0;
@@ -96,10 +80,20 @@ de_system::de_system(std::complex<double> (*W)(double, void *),
  * defined as functions (and there are no additional parameters that the
  * function might need)
  */
-de_system::de_system(std::complex<double> (*W)(double),
+de_system(std::complex<double> (*W)(double),
                      std::complex<double> (*G)(double)) {
 
   is_interpolated = 0;
   w = W;
   g = G;
 };
+  std::function<std::complex<double>(double)> w;
+  std::function<std::complex<double>(double)> g;
+  LinearInterpolator<> Winterp;
+  LinearInterpolator<> Ginterp;
+  bool islogg_, islogw_;
+  bool grid_fine_enough = 1;
+  bool is_interpolated;
+};
+
+

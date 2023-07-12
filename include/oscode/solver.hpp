@@ -32,46 +32,6 @@ private:
   bool sign;
   bool dense_output_{false};
 public:
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
-           double t_i, double t_f, int o = 3, double r_tol = 1e-4,
-           double a_tol = 0.0, double h_0 = 1, const char *full_output = "");
-
-  template <typename X = double>
-  Solution(de_system &de_sys, std::complex<double> x0, std::complex<double> dx0,
-           double t_i, double t_f, const X &do_times, int o = 3,
-           double r_tol = 1e-4, double a_tol = 0.0, double h_0 = 1,
-           const char *full_output = "");
-
-  void solve();
-
-  /** Object to call RK steps */
-  RKSolver rksolver;
-
-  /** Successful, total attempted, and successful WKB steps the solver took,
-   * respectively  */
-  int ssteps, totsteps, wkbsteps;
-  /** Lists to contain the solution and its derivative evaluated at internal
-   * points taken by the solver (i.e. not dense output) after a run */
-  std::vector<std::complex<double>> sol, dsol;
-  /** List to contain the timepoints at which the solution and derivative are
-   * internally evaluated by the solver */
-  std::vector<double> times;
-  /** List to contain the "type" of each step (RK/WKB) taken internally by the
-   * solver after a run */
-  std::vector<bool> wkbs;
-  /** Lists to contain the timepoints at which dense output was evaluated. This
-   * list will always be sorted in ascending order (with possible duplicates),
-   * regardless of the order the timepoints were specified upon input. */
-  std::vector<double> dotimes;
-  /** Lists to contain the dense output of the solution and its derivative */
-  std::vector<std::complex<double>> dosol, dodsol;
-  /** Iterator to iterate over the dense output timepoints, for when these
-   * need to be written out to file */
-  //std::vector<double>::iterator dotit;
-  // Experimental: list to contain continuous representation of the solution
-  std::vector<Eigen::Matrix<std::complex<double>, 7, 1>> sol_vdm;
-};
-
 /** Constructor for when dense output was not requested. Sets up solution of the
  * ODE.
  *
@@ -88,10 +48,10 @@ public:
  * @param[in] full_output file name to write results to
  *
  */
-Solution::Solution(de_system &de_sys, std::complex<double> x0,
-                   std::complex<double> dx0, double t_i, double t_f, int o,
-                   double r_tol, double a_tol, double h_0,
-                   const char *full_output) {
+Solution(de_system &de_sys, std::complex<double> x0,
+                   std::complex<double> dx0, double t_i, double t_f, int o=3,
+                   double r_tol=1e-4, double a_tol=0, double h_0=1,
+                   const char *full_output="") {
 
   // Make underlying equation system accessible
   de_sys_ = &de_sys;
@@ -158,7 +118,7 @@ Solution::Solution(de_system &de_sys, std::complex<double> x0,
     wkbsolver = &wkbsolver3;
     break;
   };
-};
+}
 
 /** Constructor for when dense output was requested. Sets up solution of the
  * ODE.
@@ -178,11 +138,11 @@ Solution::Solution(de_system &de_sys, std::complex<double> x0,
  * @param[in] full_output file name to write results to
  *
  */
-template <typename X>
-Solution::Solution(de_system &de_sys, std::complex<double> x0,
+template <typename X> 
+Solution(de_system &de_sys, std::complex<double> x0,
                    std::complex<double> dx0, double t_i, double t_f,
-                   const X &do_times, int o, double r_tol, double a_tol,
-                   double h_0, const char *full_output) {
+                   const X &do_times, int o=3, double r_tol=1e-4, double a_tol=0,
+                   double h_0=1, const char *full_output="") {
 
   // Make underlying equation system accessible
   de_sys_ = &de_sys;
@@ -257,8 +217,7 @@ Solution::Solution(de_system &de_sys, std::complex<double> x0,
     wkbsolver = &wkbsolver3;
     break;
   };
-};
-
+}
 /** \brief Function to solve the ODE \f$ \ddot{x} + 2\gamma(t)\dot{x} +
  * \omega^2(t)x = 0 \f$ for \f$ x(t), \frac{dx}{dt} \f$.
  *
@@ -266,7 +225,7 @@ Solution::Solution(de_system &de_sys, std::complex<double> x0,
  * with the following results:
  *
  */
-void Solution::solve() {
+void solve() {
 
   int nrk, nwkb1, nwkb2;
   // Settings for MS
@@ -283,7 +242,7 @@ void Solution::solve() {
   double wkbdelta, rkdelta;
   std::complex<double> xnext, dxnext;
   bool wkb = false;
-  Eigen::Index maxindex_wkb, maxindex_rk;
+  Eigen::Index maxindex_wkb{0}, maxindex_rk;
   h = h0;
   tnext = t + h;
   // Initialise stats
@@ -547,4 +506,38 @@ void Solution::solve() {
 
     f.close();
   }
+}
+
+  /** Object to call RK steps */
+  RKSolver rksolver;
+
+  /** Successful, total attempted, and successful WKB steps the solver took,
+   * respectively  */
+  int ssteps, totsteps, wkbsteps;
+  /** Lists to contain the solution and its derivative evaluated at internal
+   * points taken by the solver (i.e. not dense output) after a run */
+  std::vector<std::complex<double>> sol, dsol;
+  /** List to contain the timepoints at which the solution and derivative are
+   * internally evaluated by the solver */
+  std::vector<double> times;
+  /** List to contain the "type" of each step (RK/WKB) taken internally by the
+   * solver after a run */
+  std::vector<bool> wkbs;
+  /** Lists to contain the timepoints at which dense output was evaluated. This
+   * list will always be sorted in ascending order (with possible duplicates),
+   * regardless of the order the timepoints were specified upon input. */
+  std::vector<double> dotimes;
+  /** Lists to contain the dense output of the solution and its derivative */
+  std::vector<std::complex<double>> dosol, dodsol;
+  /** Iterator to iterate over the dense output timepoints, for when these
+   * need to be written out to file */
+  //std::vector<double>::iterator dotit;
+  // Experimental: list to contain continuous representation of the solution
+  std::vector<Eigen::Matrix<std::complex<double>, 7, 1>> sol_vdm;
 };
+
+
+
+
+
+
