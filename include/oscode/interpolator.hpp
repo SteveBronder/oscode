@@ -1,12 +1,12 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <complex>
 #include <iterator>
-#include <algorithm>
 
 template <typename X = double *, typename Y = std::complex<double> *,
           typename InputIt_x = double *>
-struct LinearInterpolator {
+struct BaseInterpolator {
 
 public:
   int sign_; // denotes direction of integration
@@ -19,11 +19,11 @@ public:
   double x_lower, x_upper, h;
   std::complex<double> y_lower, y_upper;
 
-  LinearInterpolator() {
+  BaseInterpolator() {
     // Default constructor
   }
 
-  LinearInterpolator(X x, Y y, int even) {
+  BaseInterpolator(X x, Y y, int even) {
     // Constructor of struct, sets struct members
 
     even_ = even;
@@ -60,52 +60,6 @@ public:
 
   void update_interp_bounds_reverse() { x_upper_bound = x_lower_it; }
 
-  std::complex<double> operator()(double x) {
-    // Does linear interpolation
-    std::complex<double> result;
-
-    if (even_ == 1) {
-      int i = int((x - xstart) / dx);
-      std::complex<double> y0 = y_[i];
-      std::complex<double> y1 = y_[i + 1];
-      result = (y0 + (y1 - y0) * (x - xstart - dx * i) / dx);
-    } else {
-
-      x_upper_it = std::upper_bound(x_lower_bound, x_upper_bound, x);
-      x_lower_it = x_upper_it - 1;
-      x_lower = *x_lower_it;
-      x_upper = *x_upper_it;
-      y_lower = y_[(x_lower_it - x0_it)];
-      y_upper = y_[(x_upper_it - x0_it)];
-      result = (y_lower * (x_upper - x) + y_upper * (x - x_lower)) /
-               (x_upper - x_lower);
-    }
-    return result;
-  }
-
-  std::complex<double> expit(double x) {
-    // Does linear interpolation when the input is ln()-d
-
-    std::complex<double> result;
-    if (even_ == 1) {
-      int i = int((x - xstart) / dx);
-      std::complex<double> y0 = y_[i];
-      std::complex<double> y1 = y_[i + 1];
-      result = std::exp(y0 + (y1 - y0) * (x - xstart - dx * i) / dx);
-    } else {
-      x_upper_it = std::upper_bound(x_lower_bound, x_upper_bound, x);
-      x_lower_it = x_upper_it - 1;
-      x_lower = *x_lower_it;
-      x_upper = *x_upper_it;
-      y_lower = y_[(x_lower_it - x0_it)];
-      y_upper = y_[(x_upper_it - x0_it)];
-      result = (y_lower * (x_upper - x) + y_upper * (x - x_lower)) /
-               (x_upper - x_lower);
-      result = std::exp(result);
-    }
-    return result;
-  }
-
   int check_grid_fineness(int N) {
 
     int success = 1;
@@ -139,5 +93,107 @@ public:
       }
     }
     return success;
+  }
+};
+
+template <typename X = double *, typename Y = std::complex<double> *,
+          typename InputIt_x = double *>
+struct LinearInterpolator : public BaseInterpolator<X, Y, InputIt_x> {
+  using BaseInterpolator<X, Y, InputIt_x>::sign_;
+  using BaseInterpolator<X, Y, InputIt_x>::xstart;
+  using BaseInterpolator<X, Y, InputIt_x>::dx;
+  using BaseInterpolator<X, Y, InputIt_x>::x_;
+  using BaseInterpolator<X, Y, InputIt_x>::y_;
+  using BaseInterpolator<X, Y, InputIt_x>::even_;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower_bound;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper_bound;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x0_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper;
+  using BaseInterpolator<X, Y, InputIt_x>::h;
+  using BaseInterpolator<X, Y, InputIt_x>::y_lower;
+  using BaseInterpolator<X, Y, InputIt_x>::y_upper;
+  LinearInterpolator() {
+    // Default constructor
+  }
+  static constexpr bool is_interpolated = true;
+  LinearInterpolator(X x, Y y, int even)
+      : BaseInterpolator<X, Y, InputIt_x>(x, y, even) {
+    // Constructor of struct, sets struct members
+  }
+  std::complex<double> operator()(double x) {
+    // Does linear interpolation
+    std::complex<double> result;
+
+    if (even_ == 1) {
+      int i = int((x - xstart) / dx);
+      std::complex<double> y0 = y_[i];
+      std::complex<double> y1 = y_[i + 1];
+      result = (y0 + (y1 - y0) * (x - xstart - dx * i) / dx);
+    } else {
+
+      x_upper_it = std::upper_bound(x_lower_bound, x_upper_bound, x);
+      x_lower_it = x_upper_it - 1;
+      x_lower = *x_lower_it;
+      x_upper = *x_upper_it;
+      y_lower = y_[(x_lower_it - x0_it)];
+      y_upper = y_[(x_upper_it - x0_it)];
+      result = (y_lower * (x_upper - x) + y_upper * (x - x_lower)) /
+               (x_upper - x_lower);
+    }
+    return result;
+  }
+};
+
+template <typename X = double *, typename Y = std::complex<double> *,
+          typename InputIt_x = double *>
+struct ExpInterpolator : public BaseInterpolator<X, Y, InputIt_x> {
+  using BaseInterpolator<X, Y, InputIt_x>::sign_;
+  using BaseInterpolator<X, Y, InputIt_x>::xstart;
+  using BaseInterpolator<X, Y, InputIt_x>::dx;
+  using BaseInterpolator<X, Y, InputIt_x>::x_;
+  using BaseInterpolator<X, Y, InputIt_x>::y_;
+  using BaseInterpolator<X, Y, InputIt_x>::even_;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower_bound;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper_bound;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x0_it;
+  using BaseInterpolator<X, Y, InputIt_x>::x_lower;
+  using BaseInterpolator<X, Y, InputIt_x>::x_upper;
+  using BaseInterpolator<X, Y, InputIt_x>::h;
+  using BaseInterpolator<X, Y, InputIt_x>::y_lower;
+  using BaseInterpolator<X, Y, InputIt_x>::y_upper;
+  ExpInterpolator() {
+    // Default constructor
+  }
+  static constexpr bool is_interpolated = true;
+  ExpInterpolator(X x, Y y, int even)
+      : BaseInterpolator<X, Y, InputIt_x>(x, y, even) {
+    // Constructor of struct, sets struct members
+  }
+  std::complex<double> operator()(double x) {
+    // Does linear interpolation when the input is ln()-d
+
+    std::complex<double> result;
+    if (even_ == 1) {
+      int i = int((x - xstart) / dx);
+      std::complex<double> y0 = y_[i];
+      std::complex<double> y1 = y_[i + 1];
+      result = std::exp(y0 + (y1 - y0) * (x - xstart - dx * i) / dx);
+    } else {
+      x_upper_it = std::upper_bound(x_lower_bound, x_upper_bound, x);
+      x_lower_it = x_upper_it - 1;
+      x_lower = *x_lower_it;
+      x_upper = *x_upper_it;
+      y_lower = y_[(x_lower_it - x0_it)];
+      y_upper = y_[(x_upper_it - x0_it)];
+      result = (y_lower * (x_upper - x) + y_upper * (x - x_lower)) /
+               (x_upper - x_lower);
+      result = std::exp(result);
+    }
+    return result;
   }
 };

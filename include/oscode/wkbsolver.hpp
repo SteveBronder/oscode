@@ -1,8 +1,8 @@
 #pragma once
-#include <oscode/system.hpp>
 #include <Eigen/Dense>
 #include <complex>
 #include <iomanip>
+#include <oscode/system.hpp>
 #include <vector>
 
 /** Class to carry out WKB steps of varying orders.  */
@@ -112,7 +112,7 @@ protected:
 public:
   // constructor
   WKBSolver();
-  WKBSolver(de_system &de_sys, int order);
+  WKBSolver(int order);
   Eigen::Matrix<std::complex<double>, 3, 2>
   step(std::complex<double> x0, std::complex<double> dx0, double t0, double h0,
        const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
@@ -137,7 +137,7 @@ public:
 
 WKBSolver::WKBSolver(){};
 
-WKBSolver::WKBSolver(de_system &de_sys, int order) {
+WKBSolver::WKBSolver(int order) {
 
   // Set order
   order_ = order;
@@ -184,7 +184,7 @@ WKBSolver::WKBSolver(de_system &de_sys, int order) {
       1736.74461287886, -1798.12714381470, 840.000000234086;
   d4w1_w << // 9744.00062637928, -27851.6858893579, 75653.4044616243,
             //-107520.008443354, 61113.3089030151, -15843.0200709916,
-            //4704.00041268436;
+            // 4704.00041268436;
       3024.00000383582,
       -6923.06197480357, 7684.77676018742, 0.0, -6855.31809730784,
       5085.60330881706, -2016.00000072890;
@@ -205,7 +205,6 @@ WKBSolver::WKBSolver(de_system &de_sys, int order) {
   d1w4_5_w << -0.518019493788065, 1.52752523062733, -3.49148624058568,
       -0.560400043118500e-8, 2.48198050935041;
   // Set polynomial Gauss--Lobatto coefficients for dense output + quadrature
-
 
   interp_vandermonde << 0.06250000000, -0.1946486424, 0.6321486424,
       0.6321486424, -0.1946486424, 0.06250000000, -0.06250000000, 0.2544242701,
@@ -802,7 +801,6 @@ void WKBSolver::d1w3_5() { d1w3_5_ = d1w3_5_w.dot(ws5_) / h; };
 void WKBSolver::d1w4_5() { d1w4_5_ = d1w4_5_w.dot(ws5_) / h; };
 
 //////////////////////////////////
-
 class WKBSolver1 : public WKBSolver {
 private:
   void dds();
@@ -812,13 +810,12 @@ private:
 
 public:
   WKBSolver1();
-  WKBSolver1(de_system &de_sys, int order);
+  WKBSolver1(int order);
 };
 
 WKBSolver1::WKBSolver1(){};
 
-WKBSolver1::WKBSolver1(de_system &de_sys, int order)
-    : WKBSolver(de_sys, order){};
+WKBSolver1::WKBSolver1(int order) : WKBSolver(order){};
 
 void WKBSolver1::dds() {
   dds_ << std::complex<double>(0, 1) * d1w1_,
@@ -857,13 +854,12 @@ private:
 
 public:
   WKBSolver2();
-  WKBSolver2(de_system &de_sys, int order);
+  WKBSolver2(int order);
 };
 
 WKBSolver2::WKBSolver2(){};
 
-WKBSolver2::WKBSolver2(de_system &de_sys, int order)
-    : WKBSolver(de_sys, order){};
+WKBSolver2::WKBSolver2(int order) : WKBSolver(order){};
 
 void WKBSolver2::dds() {
   dds_ << std::complex<double>(0, 1) * d1w1_,
@@ -938,13 +934,12 @@ private:
 
 public:
   WKBSolver3();
-  WKBSolver3(de_system &de_sys, int);
+  WKBSolver3(int);
 };
 
 WKBSolver3::WKBSolver3(){};
 
-WKBSolver3::WKBSolver3(de_system &de_sys, int order)
-    : WKBSolver(de_sys, order){};
+WKBSolver3::WKBSolver3(int order) : WKBSolver(order){};
 
 void WKBSolver3::dds() {
   dds_ << std::complex<double>(0, 1) * d1w1_,

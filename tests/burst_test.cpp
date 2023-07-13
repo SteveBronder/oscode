@@ -23,6 +23,21 @@ std::complex<double> w(double t) {
   return std::pow(n * n - 1.0, 0.5) / (1.0 + t * t);
 };
 
+struct WFunc : public BaseInterpolator<double *, std::complex<double> *>{
+    static constexpr bool is_interpolated = false;
+    std::complex<double> operator()(double t) const {
+        return std::pow(n * n - 1.0, 0.5) / (1.0 + t * t);
+    }
+    bool sign_ = false;
+};
+struct GFunc : public BaseInterpolator<double *, std::complex<double> *> {
+    bool sign_ = false; 
+    static constexpr bool is_interpolated = false;
+    std::complex<double> operator()(double t) const {
+        return 0.0;
+    }
+    
+};
 /** Defines the initial value of the solution of the ODE
  * @param[in] t Value of the independent variable in the ODE
  * @returns The value of the solution \a x at \a t
@@ -94,10 +109,11 @@ TEST(SolverTest, SolveBurstEvenFwd) {
 
   /** Create differential equation "system" */
   /** Method 1: Give frequency and damping term as functions */
-  de_system sys(&w, &g);
+  using Sys = de_system<WFunc, GFunc>;
+  Sys sys(WFunc{}, GFunc{});
   /** Solve the ODE */
   std::vector<double> times = linspace(ti, tf, 1000);
-  Solution solution(sys, x0, dx0, ti, tf, times, 3, 1e-8);
+  Solution<Sys> solution(sys, x0, dx0, ti, tf, times, 3, 1e-8);
   solution.solve();
   std::vector<double> time_comp_vec = linspace(ti, tf, 1000);
   std::vector<std::complex<double>> sol_vec;
@@ -144,12 +160,13 @@ TEST(SolverTest, SolveBurstEvenRev) {
 
   /** Create differential equation "system" */
   /** Method 1: Give frequency and damping term as functions */
-  de_system sys(&w, &g);
+  using Sys = de_system<WFunc, GFunc>;
+  Sys sys(WFunc{}, GFunc{});
   /** Solve the ODE */
   std::vector<double> times = linspace(ti, tf, 1000);
   std::reverse(times.begin(), times.end());
 
-  Solution solution(sys, x0, dx0, tf, ti, times, 3, 1e-12, 0, -1);
+  Solution<Sys> solution(sys, x0, dx0, tf, ti, times, 3, 1e-12, 0, -1);
   solution.solve();
   std::vector<std::complex<double>> sol_vec;
   for (auto &sol : solution.dosol) {

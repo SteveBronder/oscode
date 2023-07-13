@@ -1,99 +1,49 @@
 #pragma once
-#include <oscode/interpolator.hpp>
 #include <functional>
+#include <oscode/interpolator.hpp>
 /** */
-class de_system {
+template <typename WInterp, typename GInterp> class de_system {
 private:
   int even_;
 
 public:
-/** Default contructor */
-de_system() {}
+  /** Default contructor */
+  de_system() {}
 
-/** Constructor for the case of the user having defined the frequency and
- * damping terms as sequences
- */
-template <typename X, typename Y, typename Z, typename X_it>
-de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, bool islogw,
-                     bool islogg, int even, int check_grid) {
-
-  is_interpolated = 1;
-  even_ = even;
-  islogg_ = islogg;
-  islogw_ = islogw;
-
-  /** Set up interpolation on the supplied frequency and damping arrays */
-  LinearInterpolator<X, Y, X_it> winterp(ts, ws, even_);
-  LinearInterpolator<X, Z, X_it> ginterp(ts, gs, even_);
-
-  Winterp = winterp;
-  Ginterp = ginterp;
-
-  if (even_ == 0) {
-    Winterp.set_interp_start(x_it);
-    Ginterp.set_interp_start(x_it);
-    Winterp.set_interp_bounds(ts, ts + size - 1);
-    Ginterp.set_interp_bounds(ts, ts + size - 1);
-  }
-
-  /** Check if supplied grids are sampled finely enough for the purposes of
-   * linear interpolation
+  /** Constructor for the case of the user having defined the frequency and
+   * damping terms as sequences
    */
-  if (check_grid == 1) {
-    int w_is_fine = Winterp.check_grid_fineness(size);
-    int g_is_fine = Ginterp.check_grid_fineness(size);
-    if (w_is_fine == 1 && g_is_fine == 1)
-      grid_fine_enough = 1;
-    else
-      grid_fine_enough = 0;
+  template <typename X, typename Y, typename Z, typename X_it,
+            typename WWInterp, typename GGInterp>
+  de_system(X &ts, Y &ws, Z &gs, X_it x_it, int size, WWInterp &&w_interp,
+            GGInterp &&g_interp, int even, int check_grid) : 
+            even_(even),
+            w_func_(std::forward<WWInterp>(w_interp)), 
+            g_func_(std::forward<GGInterp>(g_interp)) {
+ 
+    if (even_ == 0) {
+      w_func_.set_interp_start(x_it);
+      g_func_.set_interp_start(x_it);
+      w_func_.set_interp_bounds(ts, ts + size - 1);
+      g_func_.set_interp_bounds(ts, ts + size - 1);
+    }
+
+    /** Check if supplied grids are sampled finely enough for the purposes of
+     * linear interpolation
+     */
+    if (check_grid == 1) {
+      grid_fine_enough = w_func_.check_grid_fineness(size) && g_func_.check_grid_fineness(size);
+    }
   }
+  template <typename WWInterp, typename GGInterp>
+  de_system(WWInterp &&w_interp, GGInterp &&g_interp) : 
+            even_(false),
+              w_func_(std::forward<WWInterp>(w_interp)), 
+            g_func_(std::forward<GGInterp>(g_interp)) {}
 
-  /** Bind result of interpolation to a function, this will be called by the
-   * routines taking RK and WKB steps
-   */
-  if (islogw)
-    w = std::bind(&LinearInterpolator<X, Y, X_it>::expit, Winterp,
-                  std::placeholders::_1);
-  else
-    w = std::bind(&LinearInterpolator<X, Y, X_it>::operator(), Winterp,
-                  std::placeholders::_1);
-  if (islogg)
-    g = std::bind(&LinearInterpolator<X, Z, X_it>::expit, Ginterp,
-                  std::placeholders::_1);
-  else
-    g = std::bind(&LinearInterpolator<X, Z, X_it>::operator(), Ginterp,
-                  std::placeholders::_1);
-}
-
-/** Constructor for the case when the frequency and damping terms have been
- * defined as functions
- */
-de_system(std::complex<double> (*W)(double, void *),
-                     std::complex<double> (*G)(double, void *), void *p) {
-
-  is_interpolated = 0;
-  w = [W, p](double x) { return W(x, p); };
-  g = [G, p](double x) { return G(x, p); };
-};
-
-/** Constructor for the case when the frequency and damping terms have been
- * defined as functions (and there are no additional parameters that the
- * function might need)
- */
-de_system(std::complex<double> (*W)(double),
-                     std::complex<double> (*G)(double)) {
-
-  is_interpolated = 0;
-  w = W;
-  g = G;
-};
-  std::function<std::complex<double>(double)> w;
-  std::function<std::complex<double>(double)> g;
-  LinearInterpolator<> Winterp;
-  LinearInterpolator<> Ginterp;
-  bool islogg_, islogw_;
+  WInterp w_func_;
+  GInterp g_func_;
   bool grid_fine_enough = 1;
-  bool is_interpolated;
+  static constexpr bool is_interpolated =
+      WInterp::is_interpolated || GInterp::is_interpolated;
 };
-
-
