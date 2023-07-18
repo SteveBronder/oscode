@@ -1,46 +1,74 @@
+#include <iostream>
 #include <oscode/solver.hpp>
+
 #include <cmath>
 #include <fstream>
 #include <string>
 #include <stdlib.h>
 
-/** A variable to control the number of oscillations in the solution of the burst equation  */
-double n = 100.0; 
+/** A variable to control the number of oscillations in the solution of the
+ * burst equation  */
+static constexpr double n = 100000000.0;
 
 /** Defines the friction term in the ODE to solve
  * @param[in] t Value of the independent variable in the ODE
  * @returns The value of the friction term at \a t
  */
-std::complex<double> g(double t){
-    return 0.0;
-};
+std::complex<double> g(double t) { return 0.0; };
 
 /** Defines the frequency term in the ODE to solve
  * @param[in] t Value of the independent variable in the ODE
  * @returns The value of the frequency term at \a t
  */
-std::complex<double> w(double t){
-    return std::pow(n*n - 1.0,0.5)/(1.0 + t*t);
-};
+std::complex<double> w(double t) {
+  return std::pow(n * n - 1.0, 0.5) / (1.0 + t * t);
+}
 
+struct WFunc : public BaseInterpolator<double *, std::complex<double> *>{
+    static constexpr bool is_interpolated = false;
+   inline std::complex<double> operator()(double t) const noexcept {
+        return std::pow(n * n - 1.0, 0.5) / (1.0 + t * t);
+    }
+    bool sign_ = false;
+};
+struct GFunc : public BaseInterpolator<double *, std::complex<double> *> {
+    bool sign_ = false; 
+    static constexpr bool is_interpolated = false;
+    inline constexpr std::complex<double> operator()(double t) const noexcept {
+        return 0.0;
+    }
+    
+};
 /** Defines the initial value of the solution of the ODE
  * @param[in] t Value of the independent variable in the ODE
  * @returns The value of the solution \a x at \a t
  */
-std::complex<double> xburst(double t){
-    return 100*std::pow(1.0 + t*t,
-    0.5)/n*std::complex<double>(std::cos(n*std::atan(t)),std::sin(n*std::atan(t))); 
+inline std::complex<double> xburst(double t) noexcept {
+  return 100 * std::pow(1.0 + t * t, 0.5) / n *
+         std::complex<double>(std::cos(n * std::atan(t)),
+                              std::sin(n * std::atan(t)));
 };
 
 /** Defines the initial value of the derivative of the solution of the ODE
  * @param[in] t Value of the independent variable in the ODE
  * @returns The value of the derivative of solution \a dx/dt at \a t
  */
-std::complex<double> dxburst(double t){
-    return 100/std::pow(1.0 + t*t,
-    0.5)/n*(std::complex<double>(t,n)*std::cos(n*std::atan(t)) +
-    std::complex<double>(-n,t)*std::sin(n*std::atan(t))); 
+inline std::complex<double> dxburst(double t) noexcept {
+  return 100 / std::pow(1.0 + t * t, 0.5) / n *
+         (std::complex<double>(t, n) * std::cos(n * std::atan(t)) +
+          std::complex<double>(-n, t) * std::sin(n * std::atan(t)));
 };
+
+template <typename T>
+inline std::vector<T> linspace(T start, T end, std::size_t points) noexcept {
+  std::vector<T> res(points);
+  float step = (end - start) / (points - 1);
+  size_t i = 0;
+  for (auto &e : res) {
+    e = start + step * i++;
+  }
+  return res;
+}
 
 /** \brief Routine to call oscode to solve an example ODE, to illustrate basic
  * functionality.
@@ -70,104 +98,23 @@ std::complex<double> dxburst(double t){
  */
 int main(){
 
-    std::ofstream f;
-    /** File to write solution of ODE to */
-    std::string output = "output.txt"; 
-    std::complex<double> x0, dx0;
-    double ti, tf;
-   
-    /** Define integration range */
-    ti = -2*n;
-    tf = 2*n;
+  double ti = -2 * n;
+  double tf = 2 * n;
 
-    /** Define initial conditions */
-    x0 = xburst(ti); 
-    dx0 = dxburst(ti); 
+  /** Define initial conditions */
+  std::complex<double> x0 = xburst(ti);
+  std::complex<double> dx0 = dxburst(ti);
 
-    /** Create differential equation "system" */
-    /** Method 1: Give frequency and damping term as functions */
-    de_system sys(&w, &g);
+  /** Create differential equation "system" */
+  /** Method 1: Give frequency and damping term as functions */
+  using Sys = de_system<WFunc, GFunc>;
+  Sys sys(WFunc{}, GFunc{});
+  /** Solve the ODE */
+  Solution<Sys> solution(sys, x0, dx0, ti, tf);
+  solution.solve();
 
-    /** Method 2: Give frequency and damping term as std::vectors */
-    /** 
-    int N = 20000;
-    std::vector<double> times_arr(N);
-    std::vector<std::complex<double>> ws_arr(N), gs_arr(N);
-    
-    for(int i=0; i<N; i++){
-        times_arr[i] = i/500.0;
-        ws_arr[i] = w(times_arr[i]);
-        gs_arr[i] = 0.0;
-    }
-    double * times;
-    std::complex<double> * ws, * gs;
-    times = times_arr.data();
-    ws = ws_arr.data();
-    gs = gs_arr.data();
-    de_system sys(times, ws, gs, times, N);
-    */ 
 
-    /** Method 3: Give frequency and damping terms as Eigen::Vectors */
-    /**
-    int N = 20000;
-    Eigen::VectorXd times_arr = Eigen::VectorXd::Zero(N);
-    Eigen::VectorXcd ws_arr = Eigen::VectorXcd::Zero(N), gs_arr = Eigen::VectorXcd::Zero(N);
 
-    for(int i=0; i<N; i++){
-        times_arr[i] = i/500.0;
-        ws_arr[i] = w(times_arr[i]);
-        gs_arr[i] = 0.0;
-    }
-    double * times;
-    std::complex<double> * ws, * gs;
-    times = times_arr.data();
-    ws = ws_arr.data();
-    gs = gs_arr.data();
-    de_system sys(times, ws, gs, times, N);
-    */
-
-    /** Method 4: Define frequency and damping terms as std::arrays */
-    /**
-    int N = 20000;
-    double times_arr[20000];
-    std::complex<double> ws_arr[20000], gs_arr[20000];
-
-    for(int j=0; j<N; j++){
-        times_arr[j] = j/500.0;
-        ws_arr[j] = w(times_arr[j]);
-        gs_arr[j] = 0.0;
-    }
-    double * times;
-    std::complex<double> * ws, * gs;
-    times = times_arr;
-    ws = ws_arr;
-    gs = gs_arr;
-    de_system sys(times, ws, gs, times, N);
-    */
-
-    /** Solve the ODE */    
-    Solution solution(sys, x0, dx0, ti, tf);
-    solution.solve();
-
-    /** Extract the solution and the types of steps taken by oscode */
-    std::vector<std::complex<double>> xs = solution.sol;
-    std::vector<double> ts = solution.times;
-    std::vector<bool> types = solution.wkbs;
-    int steps = solution.ssteps;
-
-    /** Write result in file */
-    f.open(output);
-    auto it_t = ts.begin();
-    auto it_x = xs.begin();
-    auto it_ty = types.begin();
-    for(int i=0; i<=steps; i++){
-        f << *it_t << ", " << std::real(*it_x) << ", " << std::imag(*it_x) << ", " <<  *it_ty << std::endl;
-        ++it_t;
-        ++it_x;
-        ++it_ty;
-    };
-    f.close();
-    std::cout << "Wrote results to " << output << std::endl;
 };
 
 

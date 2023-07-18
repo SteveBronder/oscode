@@ -213,9 +213,9 @@ public:
     auto ws = ws_gs.col(0);
     auto gs = ws_gs.col(1);
     ws7_ = Eigen::Matrix<std::complex<double>, 7, 1>{
-        {ws(0), ws(1), ws(2), ws5(2), ws(3), ws(4), ws(5)}};
+        {ws.coeff(0), ws.coeff(1), ws.coeff(2), ws5(2), ws.coeff(3), ws.coeff(4), ws.coeff(5)}};
     // Set i.c.
-    const auto ddx = -std::pow(ws(0), 2) * x0 - 2.0 * gs(0) * dx0;
+    const auto ddx = -std::pow(ws.coeff(0), 2) * x0 - 2.0 * gs.coeff(0) * dx0;
     // step and stepsize
     const double h = h0;
     if constexpr (OSCODE_DEBUG) {
@@ -267,6 +267,27 @@ public:
     result(0, 2) = ap * err_fp + am * err_fm;
     result(1, 2) = bp * err_dfp + bm * err_dfm;
 
+    // Lower order step for correction
+    // A, B
+    dsi_vec(order_) = 0.0;
+    dds_vec(order_) = 0.0;
+    dfpi = dsi_vec.sum();
+    dfmi = std::conj(dfpi);
+    ddfp = dds_vec.sum() + std::pow(dsi_vec.sum(), 2);
+    ddfm = std::conj(ddfp);
+    ap = (dx0 - x0 * dfmi) / (dfpi - dfmi);
+    am = (dx0 - x0 * dfpi) / (dfmi - dfpi);
+    bp = (ddx * dfmi - dx0 * ddfm) / (ddfp * dfmi - ddfm * dfpi);
+    bm = (ddx * dfpi - dx0 * ddfp) / (ddfm * dfpi - ddfp * dfmi);
+    // Calculate step
+    s_struct.val_(order_) = 0.0;
+    dsf_vec(order_) = 0.0;
+    fp_ = std::exp(s_struct.val_.sum());
+    fm_ = std::conj(fp_);
+    dfpf = dsf_vec.sum() * fp_;
+    dfmf = std::conj(dfpf);
+    result(0, 1) = result(0, 0) - ap * fp_ - am * fm_;
+    result(1, 1) = result(1, 0) - bp * dfpf - bm * dfmf;
     // Experimental continuous representation
     // Compute some derivatives only necessary for dense output
     if constexpr (dense_output) {
@@ -280,7 +301,7 @@ public:
               .cwiseQuotient(ws.cwiseProduct(ws_cwise));
       eigen_vec_c<6> s1_interp;
       for (int i = 0; i <= 5; i++) {
-        s1_interp(i) = -1. / 2 * std::log(ws(i));
+        s1_interp(i) = -1. / 2 * std::log(ws.coeff(i));
       }
 
       eigen_vec_c<6> s2_interp =
@@ -314,28 +335,6 @@ public:
                       std::complex<double>(0, 1) * s2_vdm_vec + s3_vdm_vec;
       x_vdm(0) = ap;
     }
-
-    // Lower order step for correction
-    // A, B
-    dsi_vec(order_) = 0.0;
-    dds_vec(order_) = 0.0;
-    dfpi = dsi_vec.sum();
-    dfmi = std::conj(dfpi);
-    ddfp = dds_vec.sum() + std::pow(dsi_vec.sum(), 2);
-    ddfm = std::conj(ddfp);
-    ap = (dx0 - x0 * dfmi) / (dfpi - dfmi);
-    am = (dx0 - x0 * dfpi) / (dfmi - dfpi);
-    bp = (ddx * dfmi - dx0 * ddfm) / (ddfp * dfmi - ddfm * dfpi);
-    bm = (ddx * dfpi - dx0 * ddfp) / (ddfm * dfpi - ddfp * dfmi);
-    // Calculate step
-    s_struct.val_(order_) = 0.0;
-    dsf_vec(order_) = 0.0;
-    fp_ = std::exp(s_struct.val_.sum());
-    fm_ = std::conj(fp_);
-    dfpf = dsf_vec.sum() * fp_;
-    dfmf = std::conj(dfpf);
-    result(0, 1) = result(0, 0) - ap * fp_ - am * fm_;
-    result(1, 1) = result(1, 0) - bp * dfpf - bm * dfmf;
 
     return result;
   }
@@ -419,6 +418,7 @@ public:
       *dox_it = dense_x;
 
       // Same, but with Vandermonde matrix:
+      /*
       double tt1 = t_trans;
       double tt2 = tt1 * t_trans;
       double tt3 = tt2 * t_trans;
@@ -427,6 +427,7 @@ public:
       double tt6 = tt5 * t_trans;
       Eigen::Matrix<double, 6, 1> t_trans_vec = {tt1 + 1, tt2 - 1, tt3 + 1,
                                                  tt4 - 1, tt5 + 1, tt6 - 1};
+
       // S0
       // Vandermonde dense output
       eigen_vec_c<6> s0_vdm_vec =
@@ -441,37 +442,7 @@ public:
       // S3
       eigen_vec_c<6> s3_vdm_vec = eigen_vec_c<6>::Zero();
       s3_vdm_vec.head(5) += (interp_vandermonde_ * s3_interp).tail(5);
-      if (OSCODE_DEBUG) {
-        std::complex<double> s0_vdm = t_trans_vec.dot(s0_vdm_vec);
-        std::complex<double> s1_vdm = t_trans_vec.dot(s1_vdm_vec);
-        std::complex<double> s2_vdm = t_trans_vec.dot(s2_vdm_vec);
-        std::complex<double> s3_vdm = t_trans_vec.dot(s3_vdm_vec);
-        // Delete?
-        // x_vdm = dense_ap_ * (s0_vdm_vec + s1_vdm_vec + s2_vdm_vec +
-        // s3_vdm_vec);
-
-        std::cout << std::setprecision(15)
-                  << "dense S0 with Vandermonde matrix: " << s0_vdm
-                  << std::endl;
-        std::cout << "dense S0 with classical theory: " << s0 << std::endl;
-        std::cout << std::setprecision(15)
-                  << "dense S1 with Vandermonde matrix: " << s1_vdm
-                  << std::endl;
-        std::cout << "dense S1 with classical theory: " << s1 << std::endl;
-        std::cout << std::setprecision(15)
-                  << "dense S2 with Vandermonde matrix: " << s2_vdm
-                  << std::endl;
-        std::cout << "dense S1 with classical theory: " << s2 << std::endl;
-        std::cout << std::setprecision(15)
-                  << "dense S3 with Vandermonde matrix: " << s3_vdm
-                  << std::endl;
-        std::cout << "dense S3 with classical theory: " << s3 << std::endl;
-
-        std::cout << "Representation of S0: " << s0_vdm_vec << std::endl;
-        std::cout << "Representation of S1: " << s1_vdm_vec << std::endl;
-        std::cout << "Ap: " << dense_ap_ << ", Am: " << dense_am_ << std::endl;
-      }
-
+     */
       // Dense output dx
       std::complex<double> ds0 =
           std::complex<double>(0, 1) * dense_interpolate(dodws6, ws);
@@ -593,9 +564,9 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * d1(0, 0),
-         1.0 / std::pow(ws(0), 2) * std::pow(d1(0, 0), 2) / 2.0 -
-             1.0 / ws(0) * d2(0, 0) / 2.0 - d1(0, 1),
+        {std::complex<double>(0, 1) * d1.coeff(0, 0),
+         1.0 / std::pow(ws.coeff(0), 2) * std::pow(d1.coeff(0, 0), 2) / 2.0 -
+             1.0 / ws.coeff(0) * d2.coeff(0, 0) / 2.0 - d1.coeff(0, 1),
          0.0, 0.0}};
   }
   virtual eigen_vec_c<4>
@@ -604,8 +575,8 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &d3,
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
-    return eigen_vec_c<4>{{std::complex<double>(0.0, 1.0) * ws(0),
-                           -0.5 * d1(0, 0) / ws(0) - gs(0), 0.0, 0.0}};
+    return eigen_vec_c<4>{{std::complex<double>(0.0, 1.0) * ws.coeff(0),
+                           -0.5 * d1.coeff(0, 0) / ws.coeff(0) - gs.coeff(0), 0.0, 0.0}};
   }
   virtual eigen_vec_c<4>
   dsf(const Eigen::Matrix<std::complex<double>, 6, 2> &d1,
@@ -613,8 +584,8 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &d3,
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
-    return eigen_vec_c<4>{{std::complex<double>(0.0, 1.0) * ws(5),
-                           -0.5 * d1(5, 0) / ws(5) - gs(5), 0.0, 0.0}};
+    return eigen_vec_c<4>{{std::complex<double>(0.0, 1.0) * ws.coeff(5),
+                           -0.5 * d1.coeff(5, 0) / ws.coeff(5) - gs.coeff(5), 0.0, 0.0}};
   }
   virtual series s(const double h,
                    const Eigen::Matrix<std::complex<double>, 6, 2> &d1,
@@ -626,7 +597,7 @@ private:
                    const Eigen::Matrix<std::complex<double>, 5, 1> &gs5) final {
     eigen_vec_c<2> s0 = std::complex<double>(0, 1) * integrate(h, ws, ws5);
     eigen_vec_c<2> s1 = integrate(h, gs, gs5);
-    s1(0) = std::log(std::sqrt(ws(0) / ws(5))) - s1(0);
+    s1(0) = std::log(std::sqrt(ws.coeff(0) / ws.coeff(5))) - s1(0);
     return series{eigen_vec_c<4>{{s0(0), s1(0), 0.0, 0.0}},
                   eigen_vec_c<4>{{s0(1), s1(1), 0.0, 0.0}}};
   }
@@ -648,18 +619,18 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * d1(0, 0),
-         1.0 / std::pow(ws(0), 2) * std::pow(d1(0, 0), 2) / 2.0 -
-             1.0 / ws(0) * d2(0, 0) / 2.0 - d1(0, 1),
+        {std::complex<double>(0, 1) * d1.coeff(0, 0),
+         1.0 / std::pow(ws.coeff(0), 2) * std::pow(d1.coeff(0, 0), 2) / 2.0 -
+             1.0 / ws.coeff(0) * d2.coeff(0, 0) / 2.0 - d1.coeff(0, 1),
          -std::complex<double>(0, 1 / 8) *
-             (8.0 * d1(0, 1) * gs(0) * std::pow(ws(0), 3) -
-              4.0 * d1(0, 0) * std::pow(gs(0), 2) * std::pow(ws(0), 2) +
-              4.0 * d2(0, 1) * std::pow(ws(0), 3) -
-              4.0 * d1(0, 0) * d1(0, 1) * std::pow(ws(0), 2) +
-              2.0 * d2(0, 0) * std::pow(ws(0), 2) -
-              10.0 * d1(0, 0) * d2(0, 0) * ws(0) +
-              9.0 * std::pow(d1(0, 0), 3)) /
-             std::pow(ws(0), 4),
+             (8.0 * d1.coeff(0, 1) * gs.coeff(0) * std::pow(ws.coeff(0), 3) -
+              4.0 * d1.coeff(0, 0) * std::pow(gs.coeff(0), 2) * std::pow(ws.coeff(0), 2) +
+              4.0 * d2.coeff(0, 1) * std::pow(ws.coeff(0), 3) -
+              4.0 * d1.coeff(0, 0) * d1.coeff(0, 1) * std::pow(ws.coeff(0), 2) +
+              2.0 * d2.coeff(0, 0) * std::pow(ws.coeff(0), 2) -
+              10.0 * d1.coeff(0, 0) * d2.coeff(0, 0) * ws.coeff(0) +
+              9.0 * std::pow(d1.coeff(0, 0), 3)) /
+             std::pow(ws.coeff(0), 4),
          0.0}};
   }
   virtual eigen_vec_c<4>
@@ -669,13 +640,13 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * ws(0),
-         -1.0 / ws(0) * d1(0, 0) / 2.0 - gs(0),
+        {std::complex<double>(0, 1) * ws.coeff(0),
+         -1.0 / ws.coeff(0) * d1.coeff(0, 0) / 2.0 - gs.coeff(0),
          std::complex<double>(0, 1 / 8) *
-             (-4.0 * std::pow(gs(0), 2) * std::pow(ws(0), 2) -
-              4.0 * d1(0, 1) * std::pow(ws(0), 2) - 2.0 * d2(0, 0) * ws(0) +
-              3.0 * std::pow(d1(0, 0), 2)) /
-             std::pow(ws(0), 3),
+             (-4.0 * std::pow(gs.coeff(0), 2) * std::pow(ws.coeff(0), 2) -
+              4.0 * d1.coeff(0, 1) * std::pow(ws.coeff(0), 2) - 2.0 * d2.coeff(0, 0) * ws.coeff(0) +
+              3.0 * std::pow(d1.coeff(0, 0), 2)) /
+             std::pow(ws.coeff(0), 3),
          0.0}};
   }
   virtual eigen_vec_c<4>
@@ -685,13 +656,13 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * ws(5),
-         -1.0 / ws(5) * d1(5, 0) / 2.0 - gs(5),
+        {std::complex<double>(0, 1) * ws.coeff(5),
+         -1.0 / ws.coeff(5) * d1.coeff(5, 0) / 2.0 - gs.coeff(5),
          std::complex<double>(0, 1 / 8) *
-             (-4.0 * std::pow(gs(5), 2) * std::pow(ws(5), 2) -
-              4.0 * d1(5, 1) * std::pow(ws(5), 2) - 2.0 * d2(5, 0) * ws(5) +
-              3.0 * std::pow(d1(5, 0), 2)) /
-             std::pow(ws(5), 3),
+             (-4.0 * std::pow(gs.coeff(5), 2) * std::pow(ws.coeff(5), 2) -
+              4.0 * d1.coeff(5, 1) * std::pow(ws.coeff(5), 2) - 2.0 * d2.coeff(5, 0) * ws.coeff(5) +
+              3.0 * std::pow(d1.coeff(5, 0), 2)) /
+             std::pow(ws.coeff(5), 3),
          0.0}};
   }
   virtual series s(const double h,
@@ -715,11 +686,11 @@ private:
             ws5.cwiseProduct(ws5.cwiseProduct(ws5)));
     eigen_vec_c<2> s0 = std::complex<double>(0, 1) * integrate(h, ws, ws5);
     eigen_vec_c<2> s1 = integrate(h, gs, gs5);
-    s1(0) = std::log(std::sqrt(ws(0) / ws(5))) - s1(0);
+    s1(0) = std::log(std::sqrt(ws.coeff(0) / ws.coeff(5))) - s1(0);
     eigen_vec_c<2> s2 = integrate(h, integrand6, integrand5);
     s2(0) = -1 / 4.0 *
-                (d1_.col(0)(5) / std::pow(ws(5), 2) + 2.0 * gs(5) / ws(5) -
-                 d1_.col(0)(0) / std::pow(ws(0), 2) - 2.0 * gs(0) / ws(0)) -
+                (d1_.col(0)(5) / std::pow(ws.coeff(5), 2) + 2.0 * gs.coeff(5) / ws.coeff(5) -
+                 d1_.col(0)(0) / std::pow(ws.coeff(0), 2) - 2.0 * gs.coeff(0) / ws.coeff(0)) -
             1 / 8.0 * s2(0);
     return {
         eigen_vec_c<4>{{s0(0), s1(0), std::complex<double>(0, 1) * s2(0), 0.0}},
@@ -744,34 +715,34 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * d1(0, 0),
-         1.0 / (ws(0) * ws(0)) * (d1(0, 0) * d1(0, 0)) / 2.0 -
-             1.0 / ws(0) * d2(0, 0) / 2.0 - d1(0, 1),
+        {std::complex<double>(0, 1) * d1.coeff(0, 0),
+         1.0 / (ws.coeff(0) * ws.coeff(0)) * (d1.coeff(0, 0) * d1.coeff(0, 0)) / 2.0 -
+             1.0 / ws.coeff(0) * d2.coeff(0, 0) / 2.0 - d1.coeff(0, 1),
          -std::complex<double>(0, 1.0 / 8.0) *
-             (8.0 * d1(0, 1) * gs(0) * (ws(0) * ws(0) * ws(0)) -
-              4.0 * d1(0, 0) * (gs(0) * gs(0)) * ws(0) * ws(0) +
-              4.0 * d2(0, 1) * (ws(0) * ws(0) * ws(0)) -
-              4.0 * d1(0, 0) * d1(0, 1) * ws(0) * ws(0) +
-              2.0 * d2(0, 0) * ws(0) * ws(0) -
-              10.0 * d1(0, 0) * d2(0, 0) * ws(0) +
-              9.0 * (d1(0, 0) * d1(0, 0) * d1(0, 0))) /
-             (ws(0) * ws(0) * ws(0) * ws(0)),
-         (d4w1_ * (ws(0) * ws(0) * ws(0)) +
-          2.0 * d3g1_ * (ws(0) * ws(0) * ws(0) * ws(0)) -
-          9.0 * d1(0, 0) * d2(0, 0) * ws(0) * ws(0) -
-          6.0 * (d2(0, 0) * d2(0, 0)) * ws(0) * ws(0) +
-          (42.0 * ws(0) * (d1(0, 0) * d1(0, 0)) -
-           4.0 * (ws(0) * ws(0) * ws(0)) * ((gs(0) * gs(0)) + d1(0, 1))) *
-              d2(0, 0) +
-          (4.0 * gs(0) * (ws(0) * ws(0) * ws(0) * ws(0)) -
-           8.0 * (ws(0) * ws(0) * ws(0)) * d1(0, 0)) *
-              d2(0, 1) -
-          30.0 * (d1(0, 0) * d1(0, 0) * d1(0, 0) * d1(0, 0)) +
-          12.0 * ws(0) * ws(0) * ((gs(0) * gs(0)) + d1(0, 1)) *
-              (d1(0, 0) * d1(0, 0)) -
-          16.0 * d1(0, 0) * d1(0, 1) * gs(0) * (ws(0) * ws(0) * ws(0)) +
-          4.0 * (d1(0, 1) * d1(0, 1)) * (ws(0) * ws(0) * ws(0) * ws(0))) /
-             (ws(0) * ws(0) * ws(0) * ws(0) * ws(0) * ws(0)) / 8.0}};
+             (8.0 * d1.coeff(0, 1) * gs.coeff(0) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) -
+              4.0 * d1.coeff(0, 0) * (gs.coeff(0) * gs.coeff(0)) * ws.coeff(0) * ws.coeff(0) +
+              4.0 * d2.coeff(0, 1) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) -
+              4.0 * d1.coeff(0, 0) * d1.coeff(0, 1) * ws.coeff(0) * ws.coeff(0) +
+              2.0 * d2.coeff(0, 0) * ws.coeff(0) * ws.coeff(0) -
+              10.0 * d1.coeff(0, 0) * d2.coeff(0, 0) * ws.coeff(0) +
+              9.0 * (d1.coeff(0, 0) * d1.coeff(0, 0) * d1.coeff(0, 0))) /
+             (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0)),
+         (d4w1_ * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) +
+          2.0 * d3g1_ * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) -
+          9.0 * d1.coeff(0, 0) * d2.coeff(0, 0) * ws.coeff(0) * ws.coeff(0) -
+          6.0 * (d2.coeff(0, 0) * d2.coeff(0, 0)) * ws.coeff(0) * ws.coeff(0) +
+          (42.0 * ws.coeff(0) * (d1.coeff(0, 0) * d1.coeff(0, 0)) -
+           4.0 * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) * ((gs.coeff(0) * gs.coeff(0)) + d1.coeff(0, 1))) *
+              d2.coeff(0, 0) +
+          (4.0 * gs.coeff(0) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) -
+           8.0 * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) * d1.coeff(0, 0)) *
+              d2.coeff(0, 1) -
+          30.0 * (d1.coeff(0, 0) * d1.coeff(0, 0) * d1.coeff(0, 0) * d1.coeff(0, 0)) +
+          12.0 * ws.coeff(0) * ws.coeff(0) * ((gs.coeff(0) * gs.coeff(0)) + d1.coeff(0, 1)) *
+              (d1.coeff(0, 0) * d1.coeff(0, 0)) -
+          16.0 * d1.coeff(0, 0) * d1.coeff(0, 1) * gs.coeff(0) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) +
+          4.0 * (d1.coeff(0, 1) * d1.coeff(0, 1)) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0))) /
+             (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) / 8.0}};
   }
   virtual eigen_vec_c<4>
   dsi(const Eigen::Matrix<std::complex<double>, 6, 2> &d1,
@@ -780,19 +751,19 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * ws(0),
-         -1.0 / ws(0) * d1(0, 0) / 2.0 - gs(0),
+        {std::complex<double>(0, 1) * ws.coeff(0),
+         -1.0 / ws.coeff(0) * d1.coeff(0, 0) / 2.0 - gs.coeff(0),
          std::complex<double>(0, 1.0 / 8.0) *
-             (-4.0 * (gs(0) * gs(0)) * ws(0) * ws(0) -
-              4.0 * d1(0, 1) * ws(0) * ws(0) - 2.0 * d2(0, 0) * ws(0) +
-              3.0 * (d1(0, 0) * d1(0, 0))) /
-             (ws(0) * ws(0) * ws(0)),
-         (d2(0, 0) * ws(0) * ws(0) + 2.0 * d2(0, 1) * (ws(0) * ws(0) * ws(0)) -
-          6.0 * d1(0, 0) * d2(0, 0) * ws(0) +
-          6.0 * (d1(0, 0) * d1(0, 0) * d1(0, 0)) -
-          4.0 * ((gs(0) * gs(0)) + d1(0, 1)) * ws(0) * ws(0) * d1(0, 0) +
-          4.0 * d1(0, 1) * gs(0) * (ws(0) * ws(0) * ws(0))) /
-             (ws(0) * ws(0) * ws(0) * ws(0) * ws(0)) / 8.0}};
+             (-4.0 * (gs.coeff(0) * gs.coeff(0)) * ws.coeff(0) * ws.coeff(0) -
+              4.0 * d1.coeff(0, 1) * ws.coeff(0) * ws.coeff(0) - 2.0 * d2.coeff(0, 0) * ws.coeff(0) +
+              3.0 * (d1.coeff(0, 0) * d1.coeff(0, 0))) /
+             (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)),
+         (d2.coeff(0, 0) * ws.coeff(0) * ws.coeff(0) + 2.0 * d2.coeff(0, 1) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) -
+          6.0 * d1.coeff(0, 0) * d2.coeff(0, 0) * ws.coeff(0) +
+          6.0 * (d1.coeff(0, 0) * d1.coeff(0, 0) * d1.coeff(0, 0)) -
+          4.0 * ((gs.coeff(0) * gs.coeff(0)) + d1.coeff(0, 1)) * ws.coeff(0) * ws.coeff(0) * d1.coeff(0, 0) +
+          4.0 * d1.coeff(0, 1) * gs.coeff(0) * (ws.coeff(0) * ws.coeff(0) * ws.coeff(0))) /
+             (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0)) / 8.0}};
   }
   virtual eigen_vec_c<4>
   dsf(const Eigen::Matrix<std::complex<double>, 6, 2> &d1,
@@ -801,20 +772,20 @@ private:
       const Eigen::Matrix<std::complex<double>, 6, 1> &ws,
       const Eigen::Matrix<std::complex<double>, 6, 1> &gs) final {
     return eigen_vec_c<4>{
-        {std::complex<double>(0, 1) * ws(5),
-         -1.0 / ws(5) * d1(5, 0) / 2.0 - gs(5),
+        {std::complex<double>(0, 1) * ws.coeff(5),
+         -1.0 / ws.coeff(5) * d1.coeff(5, 0) / 2.0 - gs.coeff(5),
          std::complex<double>(0, 1.0 / 8.0) *
-             (-4.0 * (gs(5) * gs(5)) * (ws(5) * ws(5)) -
-              4.0 * d1(5, 1) * (ws(5) * ws(5)) - 2.0 * d2(5, 0) * ws(5) +
-              3.0 * (d1(5, 0) * d1(5, 0))) /
-             (ws(5) * ws(5) * ws(5)),
-         (d2(5, 0) * (ws(5) * ws(5)) +
-          2.0 * d2(5, 1) * (ws(5) * ws(5) * ws(5)) -
-          6.0 * d1(5, 0) * d2(5, 0) * ws(5) +
-          6.0 * (d1(5, 0) * d1(5, 0) * d1(5, 0)) -
-          4.0 * ((gs(5) * gs(5)) + d1(5, 1)) * (ws(5) * ws(5)) * d1(5, 0) +
-          4.0 * d1(5, 1) * gs(5) * (ws(5) * ws(5) * ws(5))) /
-             (ws(5) * ws(5) * ws(5) * ws(5) * ws(5)) / 8.0}};
+             (-4.0 * (gs.coeff(5) * gs.coeff(5)) * (ws.coeff(5) * ws.coeff(5)) -
+              4.0 * d1.coeff(5, 1) * (ws.coeff(5) * ws.coeff(5)) - 2.0 * d2.coeff(5, 0) * ws.coeff(5) +
+              3.0 * (d1.coeff(5, 0) * d1.coeff(5, 0))) /
+             (ws.coeff(5) * ws.coeff(5) * ws.coeff(5)),
+         (d2.coeff(5, 0) * (ws.coeff(5) * ws.coeff(5)) +
+          2.0 * d2.coeff(5, 1) * (ws.coeff(5) * ws.coeff(5) * ws.coeff(5)) -
+          6.0 * d1.coeff(5, 0) * d2.coeff(5, 0) * ws.coeff(5) +
+          6.0 * (d1.coeff(5, 0) * d1.coeff(5, 0) * d1.coeff(5, 0)) -
+          4.0 * ((gs.coeff(5) * gs.coeff(5)) + d1.coeff(5, 1)) * (ws.coeff(5) * ws.coeff(5)) * d1.coeff(5, 0) +
+          4.0 * d1.coeff(5, 1) * gs.coeff(5) * (ws.coeff(5) * ws.coeff(5) * ws.coeff(5))) /
+             (ws.coeff(5) * ws.coeff(5) * ws.coeff(5) * ws.coeff(5) * ws.coeff(5)) / 8.0}};
   }
   virtual series s(double h,
                    const Eigen::Matrix<std::complex<double>, 6, 2> &d1,
@@ -837,23 +808,23 @@ private:
         dws5_.cwiseProduct(dws5_).cwiseQuotient(ws5.cwiseProduct(ws5_cwise));
     eigen_vec_c<2> s0 = std::complex<double>(0, 1) * integrate(h, ws, ws5);
     eigen_vec_c<2> s1 = integrate(h, gs, gs5);
-    s1(0) = std::log(std::sqrt(ws(0) / ws(5))) - s1(0);
+    s1(0) = std::log(std::sqrt(ws.coeff(0) / ws.coeff(5))) - s1(0);
     eigen_vec_c<2> s2 = integrate(h, integrand6, integrand5);
     s2(0) = -1 / 4.0 *
-                (d1.col(0)(5) / (ws(5) * ws(5)) + 2.0 * gs(5) / ws(5) -
-                 d1.col(0)(0) / (ws(0) * ws(0)) - 2.0 * gs(0) / ws(0)) -
+                (d1.col(0)(5) / (ws.coeff(5) * ws.coeff(5)) + 2.0 * gs.coeff(5) / ws.coeff(5) -
+                 d1.col(0)(0) / (ws.coeff(0) * ws.coeff(0)) - 2.0 * gs.coeff(0) / ws.coeff(0)) -
             1 / 8.0 * s2(0);
     std::complex<double> s3 =
         (1 / 4.0 *
-             (gs(5) * gs(5) / (ws(5) * ws(5)) -
-              gs(0) * gs(0) / (ws(0) * ws(0))) +
-         1 / 4.0 * (d1(5, 1) / (ws(5) * ws(5)) - d1(0, 1) / (ws(0) * ws(0))) -
+             (gs.coeff(5) * gs.coeff(5) / (ws.coeff(5) * ws.coeff(5)) -
+              gs.coeff(0) * gs.coeff(0) / (ws.coeff(0) * ws.coeff(0))) +
+         1 / 4.0 * (d1.coeff(5, 1) / (ws.coeff(5) * ws.coeff(5)) - d1.coeff(0, 1) / (ws.coeff(0) * ws.coeff(0))) -
          3 / 16.0 *
-             (d1.col(0)(5) * d1.col(0)(5) / (ws(5) * ws(5) * ws(5) * ws(5)) -
-              d1.col(0)(0) * d1.col(0)(0) / (ws(0) * ws(0) * ws(0) * ws(0))) +
+             (d1.col(0)(5) * d1.col(0)(5) / (ws.coeff(5) * ws.coeff(5) * ws.coeff(5) * ws.coeff(5)) -
+              d1.col(0)(0) * d1.col(0)(0) / (ws.coeff(0) * ws.coeff(0) * ws.coeff(0) * ws.coeff(0))) +
          1 / 8.0 *
-             (d2(5, 0) / (ws(5) * ws(5) * ws(5)) -
-              d2(0, 0) / (ws(0) * ws(0) * ws(0))));
+             (d2.coeff(5, 0) / (ws.coeff(5) * ws.coeff(5) * ws.coeff(5)) -
+              d2.coeff(0, 0) / (ws.coeff(0) * ws.coeff(0) * ws.coeff(0))));
     return {
         eigen_vec_c<4>{{s0(0), s1(0), std::complex<double>(0, 1) * s2(0), s3}},
         eigen_vec_c<4>{

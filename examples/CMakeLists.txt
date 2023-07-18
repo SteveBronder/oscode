@@ -15,11 +15,11 @@ set(OSCODE_HEADER_ONLY ON)
 FetchContent_Declare(
   oscode
   GIT_REPOSITORY https://github.com/SteveBronder/oscode
-  GIT_TAG        feature/cmake
+  GIT_TAG        cleanup/warnings
 )
 
 FetchContent_MakeAvailable(oscode)
-
+add_compile_options(-march=native -mtune=native -O3 -gdwarf)
 add_executable(burst_ex burst.cpp)
 
 target_link_libraries(burst_ex PRIVATE oscode)
