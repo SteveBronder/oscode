@@ -50,10 +50,10 @@ public:
     x_upper_bound = upper_it;
   }
 
-  void update_interp_bounds() {
-    if (even_ == 0 && sign_ == 1) {
+  inline void update_interp_bounds(const bool is_interpolated) noexcept {
+    if (is_interpolated && even_ == 0 && sign_ == 1) {
       x_lower_bound = x_upper_it;
-    } else if (even_ == 0 && sign_ == 0) {
+    } else if (is_interpolated && even_ == 0 && sign_ == 0) {
       x_upper_bound = x_lower_it;
     }
   }

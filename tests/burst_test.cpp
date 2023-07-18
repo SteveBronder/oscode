@@ -7,7 +7,7 @@
 
 /** A variable to control the number of oscillations in the solution of the
  * burst equation  */
-double n = 100.0;
+static constexpr double n = 100.0;
 
 /** Defines the friction term in the ODE to solve
  * @param[in] t Value of the independent variable in the ODE
@@ -116,35 +116,29 @@ TEST(SolverTest, SolveBurstEvenFwd) {
   Solution<Sys> solution(sys, x0, dx0, ti, tf, times, 3, 1e-8);
   solution.solve();
   std::vector<double> time_comp_vec = linspace(ti, tf, 1000);
-  std::vector<std::complex<double>> sol_vec;
-  for (auto &sol : solution.dosol) {
-    sol_vec.push_back(sol);
-  }
+
   std::vector<std::complex<double>> true_sol_vec;
   for (auto &t : time_comp_vec) {
     true_sol_vec.push_back(xburst(t));
   }
-  std::vector<std::complex<double>> dsol_vec;
-  for (auto &dsol : solution.dodsol) {
-    dsol_vec.push_back(dsol);
-  }
+
 
   std::vector<std::complex<double>> true_dsol_vec;
   for (auto &t : time_comp_vec) {
     true_dsol_vec.push_back(dxburst(t));
   }
   for (std::size_t i = 0; i < time_comp_vec.size(); ++i) {
-    EXPECT_NEAR((std::real(sol_vec[i]) - std::real(true_sol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::real(solution.dosol[i]) - std::real(true_sol_vec[i])), 0.0f,
                 1e-2f);
-    EXPECT_NEAR((std::imag(sol_vec[i]) - std::imag(true_sol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::imag(solution.dosol[i]) - std::imag(true_sol_vec[i])), 0.0f,
                 1e-2f);
-    EXPECT_NEAR((std::real(dsol_vec[i]) - std::real(true_dsol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::real(solution.dodsol[i]) - std::real(true_dsol_vec[i])), 0.0f,
                 1e-2);
-    EXPECT_NEAR((std::imag(dsol_vec[i]) - std::imag(true_dsol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::imag(solution.dodsol[i]) - std::imag(true_dsol_vec[i])), 0.0f,
                 1e-2);
-    //        std::cout << true_sol_vec[i] << ", " << sol_vec[i] << ": " <<
-    //        sol_vec[i] - true_sol_vec[i] << std::endl; std::cout <<
-    //        true_dsol_vec[i] << ", " << dsol_vec[i] << ": " <<  dsol_vec[i] -
+    //        std::cout << true_sol_vec[i] << ", " << solution.dodsol[i] << ": " <<
+    //        solution.dodsol[i] - true_sol_vec[i] << std::endl; std::cout <<
+    //        true_dsol_vec[i] << ", " << solution.dodsol[i] << ": " <<  solution.dodsol[i] -
     //        true_dsol_vec[i] << std::endl;
   }
 }
@@ -168,19 +162,12 @@ TEST(SolverTest, SolveBurstEvenRev) {
 
   Solution<Sys> solution(sys, x0, dx0, tf, ti, times, 3, 1e-12, 0, -1);
   solution.solve();
-  std::vector<std::complex<double>> sol_vec;
-  for (auto &sol : solution.dosol) {
-    sol_vec.push_back(sol);
-  }
+
   std::vector<double> time_comp_vec = linspace(ti, tf, 1000);
   std::reverse(time_comp_vec.begin(), time_comp_vec.end());
   std::vector<std::complex<double>> true_sol_vec;
   for (auto &t : time_comp_vec) {
     true_sol_vec.push_back(xburst(t));
-  }
-  std::vector<std::complex<double>> dsol_vec;
-  for (auto &dsol : solution.dodsol) {
-    dsol_vec.push_back(dsol);
   }
 
   std::vector<std::complex<double>> true_dsol_vec;
@@ -188,21 +175,21 @@ TEST(SolverTest, SolveBurstEvenRev) {
     true_dsol_vec.push_back(dxburst(t));
   }
   for (std::size_t i = 0; i < time_comp_vec.size(); ++i) {
-    EXPECT_NEAR((std::real(sol_vec[i]) - std::real(true_sol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::real(solution.dosol[i]) - std::real(true_sol_vec[i])), 0.0f,
                 1e-3f)
-        << "i = " << i << " sol = " << sol_vec[i]
+        << "i = " << i << " sol = " << solution.dodsol[i]
         << " true_sol = " << true_sol_vec[i];
-    EXPECT_NEAR((std::imag(sol_vec[i]) + std::imag(true_sol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::imag(solution.dosol[i]) + std::imag(true_sol_vec[i])), 0.0f,
                 1e-4f)
-        << "i = " << i << " sol = " << sol_vec[i]
+        << "i = " << i << " sol = " << solution.dodsol[i]
         << " true_sol = " << true_sol_vec[i];
-    EXPECT_NEAR((std::real(dsol_vec[i]) + std::real(true_dsol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::real(solution.dodsol[i]) + std::real(true_dsol_vec[i])), 0.0f,
                 1e-4f)
-        << "i = " << i << " dsol = " << dsol_vec[i]
+        << "i = " << i << " dsol = " << solution.dodsol[i]
         << " true_dsol = " << true_dsol_vec[i];
-    EXPECT_NEAR((std::imag(dsol_vec[i]) - std::imag(true_dsol_vec[i])), 0.0f,
+    EXPECT_NEAR((std::imag(solution.dodsol[i]) - std::imag(true_dsol_vec[i])), 0.0f,
                 1e-4f)
-        << "i = " << i << " dsol = " << dsol_vec[i]
+        << "i = " << i << " dsol = " << solution.dodsol[i]
         << " true_dsol = " << true_dsol_vec[i];
   }
 }
